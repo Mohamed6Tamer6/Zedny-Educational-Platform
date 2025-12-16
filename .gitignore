@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+
+# Virtual environments
+venv/
+.venv/
+backend/venv/
+
+# Environment variables / secrets
+.env
+backend/.env
+
+# Logs
+*.log
+backend/server.log
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# React / Node
+frontend-react/node_modules/
+frontend-react/dist/
+frontend-react/.vite/
+
+# Build outputs (if ever generated)
+backend/app/static/

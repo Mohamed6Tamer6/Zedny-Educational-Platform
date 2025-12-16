@@ -1,0 +1,174 @@
+/* ========================================
+   QUIZZES PAGE STYLES
+   ======================================== */
+
+.quizzes-page {
+    min-height: 100vh;
+    padding-top: 70px;
+    background: #000000;
+    color: white;
+}
+
+/* Page Header */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 40px;
+    margin-bottom: 20px;
+}
+
+.page-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.btn-create {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: #4f46e5;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: 0.2s;
+}
+
+.btn-create:hover {
+    background: #4338ca;
+}
+
+/* Quiz Grid */
+.quiz-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+    padding: 0 40px 40px;
+}
+
+/* Quiz Card */
+.quiz-card {
+    background: #1a1a24;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: 0.2s;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    position: relative;
+}
+
+.quiz-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+.quiz-card-img {
+    height: 140px;
+    background: linear-gradient(135deg, #1e1b4b, #312e81);
+    position: relative;
+}
+
+.quiz-card-img::after {
+    content: 'Zedny Quiz';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.2);
+    font-weight: 700;
+    font-size: 1.5rem;
+    letter-spacing: 2px;
+}
+
+.quiz-card-content {
+    padding: 16px;
+}
+
+.quiz-card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+
+.quiz-card-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.quiz-card-meta span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-delete-quiz {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    background: rgba(0, 0, 0, 0.5);
+    border: none;
+    border-radius: 50%;
+    color: #ef4444;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    opacity: 0;
+    transition: 0.2s;
+}
+
+.quiz-card:hover .btn-delete-quiz {
+    opacity: 1;
+}
+
+.btn-delete-quiz:hover {
+    background: #fff;
+    transform: scale(1.1);
+}
+
+/* States */
+.loading-state,
+.empty-state,
+.error-state {
+    text-align: center;
+    padding: 60px;
+    grid-column: 1 / -1;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    opacity: 0.3;
+}
+
+.empty-state h3 {
+    color: white;
+    margin-bottom: 8px;
+}
+
+.btn-retry {
+    padding: 8px 16px;
+    margin-top: 16px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn-retry:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
