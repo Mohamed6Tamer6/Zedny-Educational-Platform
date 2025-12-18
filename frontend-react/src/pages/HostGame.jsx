@@ -254,92 +254,140 @@ function HostGameContent() {
             )}
 
             {/* Progress Bar */}
-            <div style={{ height: 6, background: 'rgba(255,255,255,0.1)', width: '100%' }}>
+            <div style={{ height: 6, background: 'rgba(255,255,255,0.1)', width: '100%', flexShrink: 0 }}>
                 <div style={{ height: '100%', width: `${progress}%`, background: '#f59e0b', transition: 'width 0.5s ease' }}></div>
             </div>
 
-            {/* Game Header */}
-            <div className="game-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 40px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                    <span className="game-progress">Question {currentQIndex + 1} / {quizData.questions.length}</span>
-                    <span style={{ fontSize: '0.9rem', opacity: 0.7, background: 'rgba(255,255,255,0.1)', padding: '4px 10px', borderRadius: 4, width: 'fit-content' }}>
-                        {isMultiSelect ? 'Multiple Select' : 'Single Choice'}
+            {/* Scrollable Content Area */}
+            <div className="game-scrollable-content">
+                {/* Game Header */}
+                <div className="game-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 20px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                        <span className="game-progress">Question {currentQIndex + 1} / {quizData.questions.length}</span>
+                        <span style={{ fontSize: '0.9rem', opacity: 0.7, background: 'rgba(255,255,255,0.1)', padding: '4px 10px', borderRadius: 4, width: 'fit-content' }}>
+                            {isMultiSelect ? 'Multiple Select' : 'Single Choice'}
+                        </span>
+                    </div>
+
+                    <span className="timer-circle" style={{
+                        fontSize: '2rem',
+                        fontWeight: 'bold',
+                        border: '4px solid',
+                        borderColor: timer <= 5 ? '#ef4444' : '#f59e0b',
+                        color: timer <= 5 ? '#ef4444' : 'white',
+                        width: 70,
+                        height: 70,
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 0 20px rgba(0,0,0,0.3)',
+                        transition: 'all 0.3s ease',
+                        flexShrink: 0
+                    }}>
+                        {timer}
                     </span>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
+                        <span className="game-score">Score: {score}</span>
+                        <span style={{ color: '#f59e0b', fontSize: '1rem' }}>
+                            <i className="fas fa-star" style={{ marginRight: 5 }}></i>{currentQ.points || 10} pts
+                        </span>
+                    </div>
                 </div>
 
-                <span className="timer-circle" style={{
-                    fontSize: '2.2rem',
-                    fontWeight: 'bold',
-                    border: '4px solid',
-                    borderColor: timer <= 5 ? '#ef4444' : '#f59e0b',
-                    color: timer <= 5 ? '#ef4444' : 'white',
-                    width: 80,
-                    height: 80,
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 0 20px rgba(0,0,0,0.3)',
-                    transition: 'all 0.3s ease'
+                {/* Question */}
+                <div className="question-display" style={{
+                    background: 'linear-gradient(135deg, #1a1a24, #252538)',
+                    borderRadius: '16px',
+                    padding: '24px',
+                    margin: '10px auto 24px',
+                    maxWidth: '900px',
+                    width: '100%',
+                    textAlign: 'center',
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    boxSizing: 'border-box'
                 }}>
-                    {timer}
-                </span>
+                    <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: '4px',
+                        background: 'linear-gradient(90deg, #f59e0b, #fbbf24)'
+                    }}></div>
+                    <h1 className="question-text" style={{
+                        fontSize: '1.8rem',
+                        margin: '0 0 10px 0',
+                        fontWeight: '600',
+                        lineHeight: '1.4',
+                        color: '#ffffff',
+                        textShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                    }}>
+                        {currentQ.text}
+                    </h1>
+                    {isMultiSelect && (
+                        <div style={{
+                            marginTop: '12px',
+                            paddingTop: '12px',
+                            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                            fontSize: '1rem',
+                            color: '#fbbf24',
+                            fontWeight: '500'
+                        }}>
+                            <i className="fas fa-info-circle" style={{ marginRight: '8px' }}></i>
+                            Select all correct answers
+                        </div>
+                    )}
+                </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
-                    <span className="game-score">Score: {score}</span>
-                    <span style={{ color: '#f59e0b', fontSize: '1.1rem' }}>
-                        <i className="fas fa-star" style={{ marginRight: 5 }}></i>{currentQ.points || 10} pts
-                    </span>
+                {/* Answers */}
+                <div className="answers-grid" style={{ maxWidth: 900, margin: '0 auto', padding: '0 0 20px' }}>
+                    {currentQ.choices?.map((choice, idx) => {
+                        const isSelected = Array.isArray(selectedAnswer)
+                            ? selectedAnswer.includes(idx)
+                            : selectedAnswer === idx;
+
+                        return (
+                            <div
+                                key={idx}
+                                className={`answer-card ${COLORS[idx % 4]} ${isSelected ? 'selected' : ''}`}
+                                style={{
+                                    justifyContent: 'center',
+                                    border: isSelected ? '4px solid white' : '0px solid transparent',
+                                    transform: isSelected ? 'scale(1.02)' : 'scale(1)',
+                                    opacity: (showScoreOverlay) ? 0.8 : 1,
+                                    padding: '20px 16px',
+                                    minHeight: 90
+                                }}
+                                onClick={() => handleAnswer(idx)}
+                            >
+                                <div className="shape"><i className={`fas ${SHAPES[idx % 4]}`}></i></div>
+                                <span style={{ fontSize: '1.2rem', fontWeight: 600 }}>{choice.text}</span>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
 
-            {/* Question */}
-            <div className="game-question-area" style={{ marginBottom: 40, marginTop: 20 }}>
-                <h1 className="question-text" style={{ fontSize: '2.5rem', marginBottom: 15 }}>{currentQ.text}</h1>
-                {isMultiSelect && <p style={{ color: '#fbbf24', fontSize: '1.1rem' }}>(Select all correct answers)</p>}
-            </div>
-
-            {/* Answers */}
-            <div className="answers-grid" style={{ maxWidth: 1100, margin: '0 auto' }}>
-                {currentQ.choices?.map((choice, idx) => {
-                    const isSelected = Array.isArray(selectedAnswer)
-                        ? selectedAnswer.includes(idx)
-                        : selectedAnswer === idx;
-
-                    return (
-                        <div
-                            key={idx}
-                            className={`answer-card ${COLORS[idx % 4]} ${isSelected ? 'selected' : ''}`}
-                            style={{
-                                justifyContent: 'center',
-                                border: isSelected ? '5px solid white' : '0px solid transparent',
-                                transform: isSelected ? 'scale(1.02)' : 'scale(1)',
-                                opacity: (showScoreOverlay) ? 0.8 : 1,
-                                padding: '30px 20px',
-                                minHeight: 120
-                            }}
-                            onClick={() => handleAnswer(idx)}
-                        >
-                            <div className="shape"><i className={`fas ${SHAPES[idx % 4]}`}></i></div>
-                            <span style={{ fontSize: '1.4rem', fontWeight: 600 }}>{choice.text}</span>
-                        </div>
-                    );
-                })}
-            </div>
-
-            {/* Controls */}
-            <div className="host-controls" style={{ marginTop: 50, paddingBottom: 40 }}>
-                <button className="btn btn-primary" onClick={processAnswerAndAdvance} style={{
-                    padding: '18px 60px',
-                    fontSize: '1.3rem',
+            {/* Fixed Bottom Button */}
+            <div className="game-fixed-bottom">
+                <button className="btn btn-primary next-question-btn" onClick={processAnswerAndAdvance} style={{
+                    padding: '16px 50px',
+                    fontSize: '1.2rem',
                     borderRadius: '50px',
                     boxShadow: '0 8px 25px rgba(245, 158, 11, 0.4)',
                     background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
                     border: 'none',
                     fontWeight: 800,
-                    letterSpacing: 1
+                    letterSpacing: 1,
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease'
                 }}>
-                    NEXT QUESTION <i className="fas fa-chevron-right" style={{ marginLeft: 15 }}></i>
+                    NEXT QUESTION <i className="fas fa-chevron-right" style={{ marginLeft: 12 }}></i>
                 </button>
             </div>
         </div>

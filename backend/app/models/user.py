@@ -8,9 +8,9 @@ from app.db.session import Base
 
 class UserRole(str, enum.Enum):
     """User roles in the system."""
-    STUDENT = "student"
-    TEACHER = "teacher"
-    ADMIN = "admin"
+    STUDENT = "STUDENT"
+    TEACHER = "TEACHER"
+    ADMIN = "ADMIN"
 
 
 class User(Base):

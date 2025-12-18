@@ -86,4 +86,3 @@ async def spa_fallback(full_path: str):
         },
         status_code=404,
     )
-

@@ -278,7 +278,11 @@ export default function CreateQuiz() {
                 body: formData
             });
 
-            if (!res.ok) throw new Error('Generation failed');
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                const detail = errorData.detail || errorData.message || 'Generation failed';
+                throw new Error(detail);
+            }
 
             const data = await res.json();
 
@@ -318,20 +322,11 @@ export default function CreateQuiz() {
             console.error('PDF Generation Error:', err);
             setAiStatus('error');
 
-            // Try to get detailed error message
-            let errorMessage = "Failed to generate questions. ";
+            // If it's the error we threw from !res.ok, use its message
+            // Otherwise, it might be a network error or crash
+            let errorMessage = err.message || "Connection lost or server error. Please check if backend is running.";
 
-            if (err.response) {
-                // Backend returned an error response
-                const errorData = await err.response.json().catch(() => ({}));
-                errorMessage += errorData.detail || errorData.message || "Check PDF content and API key.";
-            } else if (err.message) {
-                errorMessage += err.message;
-            } else {
-                errorMessage += "Check PDF content and API key.";
-            }
-
-            showNotification(errorMessage, "error");
+            showNotification(`Generation Error: ${errorMessage}`, "error");
 
             // Clear file input on error as well, so user can retry cleanly
             if (fileInputRef.current) fileInputRef.current.value = '';

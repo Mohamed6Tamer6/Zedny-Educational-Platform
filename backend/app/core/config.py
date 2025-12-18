@@ -6,8 +6,8 @@ from typing import Optional
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
     
-    # Database
-    DATABASE_URL: str = "postgresql+asyncpg://user:password@localhost:5432/zedny_db"
+    # Database (set via .env file)
+    DATABASE_URL: str = "postgresql+asyncpg://postgres:password@localhost:5432/zedny_db"
     
     # Security
     SECRET_KEY: str = "your-super-secret-key-change-in-production"
@@ -20,12 +20,14 @@ class Settings(BaseSettings):
     API_V1_PREFIX: str = "/api/v1"
     
     # AI Services
-    GEMINI_API_KEY: Optional[str] = "AIzaSyBfwQ9kTfGT2xCtnxLp32EHAbgoXs1R7Fc"
-    GOOGLE_API_KEY: Optional[str] = "AIzaSyBfwQ9kTfGT2xCtnxLp32EHAbgoXs1R7Fc"
+    GEMINI_API_KEY: Optional[str] = None
+    GOOGLE_API_KEY: Optional[str] = None
+    OPENAI_API_KEY: Optional[str] = None
     
     class Config:
         env_file = ".env"
         case_sensitive = True
+        extra = "ignore"
 
 
 @lru_cache

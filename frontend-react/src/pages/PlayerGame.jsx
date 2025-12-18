@@ -230,29 +230,35 @@ export default function PlayerGame() {
             )}
 
             {step === 'playing' && quizData && (
-                <>
+                <div className="game-content">
                     <div className="game-header">
                         <div className="game-progress">Q {currentQIndex + 1} / {quizData.questions.length}</div>
                         <div className="timer-circle">{timer}</div>
                         <div className="game-score">Score: <strong>{score}</strong></div>
                     </div>
 
-                    <div className="game-question-area">
-                        <h1 className="question-text">{quizData.questions[currentQIndex].text}</h1>
-                    </div>
-
-                    <div className="answers-grid">
-                        {quizData.questions[currentQIndex].choices.map((c, idx) => (
-                            <div
-                                key={idx}
-                                className={`answer-card ${COLORS[idx % 4]}`}
-                                onClick={() => handleAnswer(idx)}
-                                style={{ transform: 'none' }} /* Force no pre-transform blocking */
-                            >
-                                <div className="shape"><i className={`fas ${SHAPES[idx % 4]}`}></i></div>
-                                <span>{c.text}</span>
+                    <div className="game-main">
+                        <div className="question-display">
+                            <h1 className="question-text">{quizData.questions[currentQIndex].text}</h1>
+                            <div className="question-meta">
+                                <span>Question {currentQIndex + 1} of {quizData.questions.length}</span>
+                                <span>{quizData.questions[currentQIndex].points || 10} points</span>
                             </div>
-                        ))}
+                        </div>
+
+                        <div className="answers-grid">
+                            {quizData.questions[currentQIndex].choices.map((c, idx) => (
+                                <div
+                                    key={idx}
+                                    className={`answer-card ${COLORS[idx % 4]}`}
+                                    onClick={() => handleAnswer(idx)}
+                                    style={{ transform: 'none' }}
+                                >
+                                    <div className="shape"><i className={`fas ${SHAPES[idx % 4]}`}></i></div>
+                                    <span>{c.text}</span>
+                                </div>
+                            ))}
+                        </div>
                     </div>
 
                     {/* Feedback Overlay */}
@@ -268,7 +274,7 @@ export default function PlayerGame() {
                             </div>
                         </div>
                     )}
-                </>
+                </div>
             )}
 
             {step === 'results' && (

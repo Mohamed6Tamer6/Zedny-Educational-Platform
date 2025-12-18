@@ -6,9 +6,9 @@ from enum import Enum
 
 class UserRole(str, Enum):
     """User roles enum for Pydantic."""
-    STUDENT = "student"
-    TEACHER = "teacher"
-    ADMIN = "admin"
+    STUDENT = "STUDENT"
+    TEACHER = "TEACHER"
+    ADMIN = "ADMIN"
 
 
 # -------------------- Auth Schemas --------------------

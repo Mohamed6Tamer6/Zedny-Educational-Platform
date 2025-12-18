@@ -4,12 +4,82 @@
 
 .game-page {
     height: 100vh;
+    max-height: 100vh;
     background: #0a0a0f;
     color: white;
     font-family: 'Inter', 'Outfit', sans-serif;
-    overflow: hidden;
     position: relative;
-    /* Ensure absolute children position correctly */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Scrollable content area */
+.game-scrollable-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0 20px 20px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.game-scrollable-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.game-scrollable-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.game-scrollable-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+}
+
+.game-scrollable-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* Fixed bottom button container */
+.game-fixed-bottom {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, #0a0a0f 0%, #0a0a0f 70%, transparent 100%);
+    padding: 20px 20px 30px;
+    display: flex;
+    justify-content: center;
+    z-index: 100;
+}
+
+.game-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    max-width: 1000px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 20px;
+    box-sizing: border-box;
+}
+
+.game-main {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Hide scrollbar */
@@ -37,26 +107,27 @@
 }
 
 .score-label {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     color: rgba(255, 255, 255, 0.6);
     letter-spacing: 2px;
     text-transform: uppercase;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
 .score-number {
-    font-size: 6rem;
+    font-size: 4.5rem;
     font-weight: 800;
     background: linear-gradient(135deg, #f59e0b, #fbbf24);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     text-shadow: 0 10px 30px rgba(245, 158, 11, 0.3);
 }
 
 .score-plus {
-    font-size: 3rem;
+    font-size: 2.5rem;
     color: #22c55e;
-    margin-top: 20px;
+    margin-top: 15px;
     animation: slideUpFade 0.5s ease-out;
     font-weight: 700;
 }
@@ -83,6 +154,41 @@
     }
 }
 
+/* Question Display */
+.question-display {
+    background: #1a1a24;
+    border-radius: 12px;
+    padding: 30px;
+    margin: 0 auto 30px;
+    max-width: 800px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    box-sizing: border-box;
+}
+
+.question-text {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 0;
+    padding: 10px 0;
+    color: #ffffff;
+    line-height: 1.4;
+}
+
+.question-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 10px;
+}
+
 /* Screens */
 .game-screen {
     display: none;
@@ -97,13 +203,13 @@
 /* ... existing code ... */
 
 .answer-card:hover {
-    filter: brightness(1.2);
-    transform: translateY(-2px);
+    filter: brightness(1.1);
+    transform: translateY(-1.5px);
 }
 
 .answer-card:active {
-    transform: scale(0.96);
-    filter: brightness(0.9);
+    transform: scale(0.94);
+    filter: brightness(0.85);
 }
 
 .answer-card.red {
@@ -123,14 +229,40 @@
 }
 
 .shape {
-    width: 40px;
-    height: 40px;
+    width: 30px;
+    height: 30px;
     background: rgba(0, 0, 0, 0.2);
-    border-radius: 8px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-right: 16px;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
+.answer-card {
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: 500;
+    min-height: 60px;
+    margin: 4px;
+}
+
+.answers-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 /* --- FEEDBACK --- */
@@ -149,8 +281,8 @@
 }
 
 .feedback-icon {
-    font-size: 5rem;
-    margin-bottom: 20px;
+    font-size: 4rem;
+    margin-bottom: 15px;
 }
 
 .answer-feedback.correct .feedback-icon {
@@ -170,14 +302,14 @@
 }
 
 .feedback-content h2 {
-    font-size: 3rem;
+    font-size: 2.5rem;
     margin-bottom: 10px;
 }
 
 .feedback-content p {
-    font-size: 1.2rem;
+    font-size: 1rem;
     color: rgba(255, 255, 255, 0.7);
-    margin-bottom: 30px;
+    margin-bottom: 25px;
 }
 
 /* --- RESULTS --- */
@@ -192,10 +324,10 @@
 .results-card {
     text-align: center;
     background: #1a1a24;
-    padding: 50px;
-    border-radius: 24px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-    max-width: 500px;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+    max-width: 450px;
     animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     position: relative;
     overflow: hidden;
@@ -228,33 +360,33 @@
 .result-rank-badge {
     background: linear-gradient(135deg, #f59e0b, #d97706);
     color: white;
-    padding: 10px 20px;
-    border-radius: 50px;
+    padding: 8px 16px;
+    border-radius: 40px;
     font-weight: 800;
-    font-size: 1.5rem;
-    margin-bottom: 20px;
+    font-size: 1.2rem;
+    margin-bottom: 15px;
     display: inline-block;
     box-shadow: 0 10px 20px rgba(245, 158, 11, 0.3);
     animation: slideUp 0.5s ease-out 0.2s backwards;
 }
 
 .results-icon {
-    width: 80px;
-    height: 80px;
+    width: 60px;
+    height: 60px;
     background: #f59e0b;
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 2.5rem;
-    margin: 0 auto 24px;
-    box-shadow: 0 0 30px rgba(245, 158, 11, 0.4);
+    font-size: 2rem;
+    margin: 0 auto 20px;
+    box-shadow: 0 0 25px rgba(245, 158, 11, 0.4);
 }
 
 .results-stats {
     display: flex;
     justify-content: space-around;
-    margin: 30px 0;
+    margin: 25px 0;
     background: rgba(255, 255, 255, 0.05);
     padding: 20px;
     border-radius: 12px;
@@ -321,4 +453,93 @@
     justify-content: center;
     gap: 20px;
     padding: 20px;
+}
+
+/* Next Question Button Enhancement */
+.next-question-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.next-question-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 35px rgba(245, 158, 11, 0.5) !important;
+}
+
+.next-question-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3) !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .game-header {
+        padding: 15px 10px !important;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .timer-circle {
+        width: 60px !important;
+        height: 60px !important;
+        font-size: 1.6rem !important;
+    }
+
+    .question-display {
+        padding: 18px !important;
+        margin: 5px auto 15px !important;
+    }
+
+    .question-text {
+        font-size: 1.4rem !important;
+    }
+
+    .answers-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
+
+    .answer-card {
+        min-height: 70px !important;
+        padding: 15px 12px !important;
+    }
+
+    .answer-card span {
+        font-size: 1rem !important;
+    }
+
+    .game-fixed-bottom {
+        padding: 15px 15px 25px !important;
+    }
+
+    .next-question-btn {
+        padding: 14px 40px !important;
+        font-size: 1rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .host-topbar {
+        padding: 0 10px !important;
+        height: 50px !important;
+    }
+
+    .game-header {
+        padding: 10px 5px !important;
+    }
+
+    .timer-circle {
+        width: 50px !important;
+        height: 50px !important;
+        font-size: 1.4rem !important;
+    }
+
+    .question-text {
+        font-size: 1.2rem !important;
+    }
+
+    .game-score,
+    .game-progress {
+        font-size: 0.85rem !important;
+    }
 }

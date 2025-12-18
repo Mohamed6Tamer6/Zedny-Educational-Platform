@@ -30,3 +30,11 @@ frontend-react/.vite/
 
 # Build outputs (if ever generated)
 backend/app/static/
+
+# Ignore test and temporary files
+backend/inspect_enum.py
+backend/list_dbs.py
+backend/output_utf8.txt
+backend/test_ai_fix.py
+backend/test_db_conn.py
+backend/test_reg_direct.py
