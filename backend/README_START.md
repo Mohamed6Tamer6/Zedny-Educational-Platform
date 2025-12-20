@@ -1,53 +1,49 @@
-# كيفية تشغيل السيرفر
+# How to Run the Server
 
-## الطريقة الموصى بها (الأسهل):
+## Recommended Method (Easiest):
 
-### على Windows:
-1. **استخدم ملف الباتش:**
-   - انقر نقراً مزدوجاً على `start_server.bat`
-   - أو من التيرمنال:
+### On Windows:
+1. **Use the Batch file:**
+   - Double-click on `start_server.bat`
+   - Or from the terminal:
      ```cmd
      start_server.bat
      ```
 
-2. **أو استخدم PowerShell:**
+2. **Or use PowerShell:**
    ```powershell
    .\start_server.ps1
    ```
 
-3. **أو استخدم Python مباشرة:**
+3. **Or use Python directly:**
    ```bash
    cd backend
    venv\Scripts\activate
    python run.py
    ```
 
-## الطريقة اليدوية (إذا أردت):
+## Manual Method (Optional):
 
 ```bash
-cd A:\zedny-project\backend
+cd backend
 venv\Scripts\activate
 python -m uvicorn app.main:app --reload
 ```
 
-**ملاحظة:** يجب أن تكون داخل مجلد `backend` عند تشغيل الأمر.
+**Note:** You must be inside the `backend` folder when running the command.
 
 ---
 
-## بعد التشغيل:
+## After Running:
 
-- السيرفر سيعمل على: **http://127.0.0.1:8000**
-- واجهة API Documentation: **http://127.0.0.1:8000/docs**
-- الصفحة الرئيسية: **http://127.0.0.1:8000/**
+- The server will run on: **http://127.0.0.1:8000**
+- API Documentation interface: **http://127.0.0.1:8000/docs**
+- Main Page: **http://127.0.0.1:8000/**
 
 ---
 
-## حل المشاكل:
+## Troubleshooting:
 
-إذا ظهر خطأ `ModuleNotFoundError: No module named 'app'`:
-- تأكد أنك داخل مجلد `backend`
-- استخدم `run.py` أو `start_server.bat` بدلاً من الأمر المباشر
-
-
-
-
+If the error `ModuleNotFoundError: No module named 'app'` appears:
+- Make sure you are inside the `backend` folder.
+- Use `run.py` or `start_server.bat` instead of the direct command.
