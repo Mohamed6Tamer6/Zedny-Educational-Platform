@@ -22,3 +22,4 @@ python-jose[cryptography]
 google-generativeai
 pypdf
 langchain-text-splitters
+psutil
