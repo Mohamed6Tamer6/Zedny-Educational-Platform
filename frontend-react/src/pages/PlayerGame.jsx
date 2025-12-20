@@ -30,7 +30,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import '../styles/Game.css';
@@ -42,7 +42,7 @@ const SHAPES = ['fa-square', 'fa-circle', 'fa-play', 'fa-star'];
 export default function PlayerGame() {
     const navigate = useNavigate();
     const { showNotification } = useNotification();
-    const { token } = useAuth(); // Optional for player, but good if we have it
+    const { user, token } = useAuth(); // Optional for player, but good if we have it
 
     // Steps: 'join', 'waiting', 'playing', 'results'
     const [step, setStep] = useState('join');
@@ -56,9 +56,43 @@ export default function PlayerGame() {
     const [wrongCount, setWrongCount] = useState(0);
     const [timer, setTimer] = useState(0);
     const [feedback, setFeedback] = useState(null); // { isCorrect, correctText, points }
+    const [selectedChoice, setSelectedChoice] = useState(null);
+    const [isSaving, setIsSaving] = useState(false);
 
-    // Timer Ref
+    // Refs for stable results regardless of React render cycles
+    const scoreRef = useRef(0);
+    const correctCountRef = useRef(0);
     const intervalRef = useRef(null);
+    const location = useLocation();
+
+    // Auto-join if code in URL
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const code = params.get('code');
+        if (code) {
+            setRoomCode(code);
+            if (user?.full_name) {
+                setPlayerName(user.full_name);
+                autoJoin(code, user.full_name);
+            }
+        }
+    }, [location.search, user]);
+
+    const autoJoin = async (code, name) => {
+        try {
+            const res = await fetch(`${API_URL}/quizzes/by-code/${code}`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
+            });
+            if (res.ok) {
+                const quiz = await res.json();
+                setQuizData(quiz);
+                setStep('waiting');
+                setTimeout(() => startGame(quiz), 1500);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
     // --- JOIN LOGIC ---
     const handleJoin = async () => {
@@ -72,27 +106,19 @@ export default function PlayerGame() {
         }
 
         try {
-            // Find quiz by access code
-            // We'll use the public endpoint if available, or authenticated
-            const headers = token ? { Authorization: `Bearer ${token}` } : {};
-            const res = await fetch(`${API_URL}/quizzes/`, { headers });
+            const res = await fetch(`${API_URL}/quizzes/by-code/${roomCode}`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
+            });
 
             if (res.ok) {
-                const quizzes = await res.json();
-                const foundQuiz = quizzes.find(q => q.access_code === roomCode);
-
-                if (foundQuiz) {
-                    setQuizData(foundQuiz);
-                    setStep('waiting');
-                    // Auto start after 2s simulation
-                    setTimeout(() => {
-                        startGame(foundQuiz);
-                    }, 2000);
-                } else {
-                    showNotification("Room not found", "error");
-                }
+                const foundQuiz = await res.json();
+                setQuizData(foundQuiz);
+                setStep('waiting');
+                setTimeout(() => {
+                    startGame(foundQuiz);
+                }, 2000);
             } else {
-                showNotification("Connection error", "error");
+                showNotification("Room not found or invalid", "error");
             }
         } catch (err) {
             console.error(err);
@@ -107,13 +133,20 @@ export default function PlayerGame() {
         }
         setStep('playing');
         setCurrentQIndex(0);
+        setScore(0);
+        setCorrectCount(0);
+        setWrongCount(0);
+        scoreRef.current = 0;
+        correctCountRef.current = 0;
         loadQuestion(0, quiz);
     };
 
     const loadQuestion = (index, quiz) => {
+        if (!quiz || !quiz.questions[index]) return;
         const q = quiz.questions[index];
         setTimer(q.time_limit || 20);
         setFeedback(null);
+        setSelectedChoice(null);
 
         // Start Timer
         if (intervalRef.current) clearInterval(intervalRef.current);
@@ -130,14 +163,141 @@ export default function PlayerGame() {
     };
 
     const handleTimeout = () => {
-        // Treat as wrong answer
-        setWrongCount(prev => prev + 1);
+        // Automatically submit the quiz with current saved answers
+        if (selectedChoice !== null) {
+            const q = quizData.questions[currentQIndex];
+            const choice = q.choices[selectedChoice];
+            if (choice?.is_correct) {
+                const pts = q.points || 10;
+                setScore(prev => prev + pts);
+                setCorrectCount(prev => prev + 1);
+                scoreRef.current += pts;
+                correctCountRef.current += 1;
+            } else {
+                setWrongCount(prev => prev + 1);
+            }
+        } else {
+            setWrongCount(prev => prev + 1);
+        }
+
+        // Timer expiry forces quiz completion
+        finishGame();
+    };
+
+    const handleChoiceClick = (idx) => {
+        if (feedback) return;
+        setSelectedChoice(idx);
+    };
+
+    const commitAnswer = () => {
+        if (selectedChoice === null) return;
+
         const q = quizData.questions[currentQIndex];
-        setFeedback({
-            isCorrect: false,
-            correctText: q.choices.find(c => c.is_correct)?.text,
-            points: q.points || 10
-        });
+        const choice = q.choices[selectedChoice];
+        const isCorrect = choice?.is_correct || false;
+
+        if (isCorrect) {
+            const pts = q.points || 10;
+            setScore(prev => prev + pts);
+            setCorrectCount(prev => prev + 1);
+            scoreRef.current += pts;
+            correctCountRef.current += 1;
+            setFeedback({ isCorrect: true, points: pts });
+        } else {
+            setWrongCount(prev => prev + 1);
+            setFeedback({
+                isCorrect: false,
+                correctText: q.choices.find(c => c.is_correct)?.text || "Unknown"
+            });
+        }
+
+        if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+
+    const nextQuestion = () => {
+        if (quizData && currentQIndex < quizData.questions.length - 1) {
+            const nextIdx = currentQIndex + 1;
+            setCurrentQIndex(nextIdx);
+            loadQuestion(nextIdx, quizData);
+        } else {
+            finishGame();
+        }
+    };
+
+    const finishGame = async () => {
+        setStep('results');
+        if (intervalRef.current) clearInterval(intervalRef.current);
+
+        if (token && quizData) {
+            try {
+                setIsSaving(true);
+                // Calculate rank inside finishGame since state updates might not be flushed
+                const totalQ = quizData.questions.length || 1;
+                const finalCorrect = correctCountRef.current;
+                const finalScore = scoreRef.current;
+
+                const ratio = finalCorrect / totalQ;
+                let rankLabel = 'Novice';
+                if (ratio >= 0.8) rankLabel = 'Legendary!';
+                else if (ratio >= 0.6) rankLabel = 'Expert';
+                else if (ratio >= 0.4) rankLabel = 'Intermediate';
+
+                const payload = {
+                    quiz_id: quizData.id,
+                    score: finalScore,
+                    total_questions: totalQ,
+                    correct_answers: finalCorrect,
+                    rank: rankLabel
+                };
+
+                console.log("DEBUG: Sending payload to /attempts", payload);
+                const res = await fetch(`${API_URL}/quizzes/${quizData.id}/attempts`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    const saved = await res.json();
+                    console.log("DEBUG: Saved successfully", saved);
+                    showNotification("Performance saved successfully", "success");
+                } else {
+                    const errorMsg = await res.text();
+                    console.error("DEBUG: Save failed", res.status, errorMsg);
+                    showNotification(`Error: ${res.status} - Could not save results`, "error");
+                }
+            } catch (err) {
+                console.error("DEBUG: Network error saving result", err);
+                showNotification("Network error. Results not saved.", "error");
+            } finally {
+                setIsSaving(false);
+            }
+        } else {
+            console.warn("DEBUG: Token or QuizData missing in finishGame", { token: !!token, quizData: !!quizData });
+        }
+    };
+
+    const resetGame = () => {
+        setStep('join');
+        setQuizData(null);
+        setScore(0);
+        setCorrectCount(0);
+        setWrongCount(0);
+        scoreRef.current = 0;
+        correctCountRef.current = 0;
+        setFeedback(null);
+        setSelectedChoice(null);
+    };
+
+    const handleExit = () => {
+        if (isSaving) {
+            showNotification("Saving results, please wait...", "warning");
+            return;
+        }
+        navigate('/dashboard');
     };
 
     // --- RANKS ---
@@ -150,45 +310,6 @@ export default function PlayerGame() {
         return { label: 'Novice', padding: 20 };
     };
 
-    const handleAnswer = (choiceIndex) => {
-        console.log("DEBUG: Answer clicked index:", choiceIndex);
-        if (feedback) {
-            console.log("DEBUG: Click ignored, feedback already showing.");
-            return;
-        }
-
-        // Clear timer immediately
-        if (intervalRef.current) clearInterval(intervalRef.current);
-
-        const q = quizData.questions[currentQIndex];
-        if (!q) {
-            console.error("DEBUG: Question not found at index", currentQIndex);
-            return;
-        }
-
-        const choice = q.choices[choiceIndex];
-        if (!choice) {
-            console.error("DEBUG: Choice not found at index", choiceIndex);
-            return;
-        }
-
-        const isCorrect = choice.is_correct;
-        console.log("DEBUG: Choice is correct?", isCorrect);
-
-        if (isCorrect) {
-            const pts = q.points || 10;
-            // Use functional state updates to ensure accuracy
-            setScore(prev => prev + pts);
-            setCorrectCount(prev => prev + 1);
-            setFeedback({ isCorrect: true, points: pts });
-        } else {
-            setWrongCount(prev => prev + 1);
-            setFeedback({
-                isCorrect: false,
-                correctText: q.choices.find(c => c.is_correct)?.text || "Unknown"
-            });
-        }
-    };
 
     // Counting animation effect
     const AnimatedValue = ({ value }) => {
@@ -281,14 +402,27 @@ export default function PlayerGame() {
                             {quizData.questions[currentQIndex].choices.map((c, idx) => (
                                 <div
                                     key={idx}
-                                    className={`answer-card ${COLORS[idx % 4]}`}
-                                    onClick={() => handleAnswer(idx)}
+                                    className={`answer-card ${COLORS[idx % 4]} ${selectedChoice === idx ? 'selected' : ''}`}
+                                    onClick={() => handleChoiceClick(idx)}
                                     style={{ transform: 'none' }}
                                 >
                                     <div className="shape"><i className={`fas ${SHAPES[idx % 4]}`}></i></div>
                                     <span>{c.text}</span>
                                 </div>
                             ))}
+                        </div>
+
+                        {/* Control Row: Only visible when a choice is made and no feedback is showing */}
+                        <div className="game-actions-row">
+                            {selectedChoice !== null && !feedback && (
+                                <button
+                                    className="btn btn-primary next-question-btn"
+                                    style={{ padding: '15px 60px', fontSize: '1.2rem', minWidth: '250px' }}
+                                    onClick={commitAnswer}
+                                >
+                                    {currentQIndex < quizData.questions.length - 1 ? 'Next Question' : 'Finish Quiz'}
+                                </button>
+                            )}
                         </div>
                     </div>
 
@@ -299,7 +433,7 @@ export default function PlayerGame() {
                                 <i className={`feedback-icon fas ${feedback.isCorrect ? 'fa-check-circle' : 'fa-times-circle'}`}></i>
                                 <h2>{feedback.isCorrect ? 'Correct!' : 'Wrong!'}</h2>
                                 <p>{feedback.isCorrect ? `+${feedback.points} Points` : `Correct answer: ${feedback.correctText}`}</p>
-                                <button className="btn btn-primary" style={{ padding: '15px 30px', fontSize: '1.2rem' }} onClick={nextQuestion}>
+                                <button className="btn btn-primary" style={{ padding: '15px 30px', fontSize: '1.2rem', minWidth: '200px' }} onClick={nextQuestion}>
                                     {currentQIndex < quizData.questions.length - 1 ? 'Next Question' : 'Finish Game'}
                                 </button>
                             </div>
@@ -317,22 +451,23 @@ export default function PlayerGame() {
                         <div className="results-stats">
                             <div className="result-stat">
                                 <span className="stat-label">Correct</span>
-                                <span className="stat-value correct">{correctCount}</span>
+                                <span className="stat-value correct">{correctCountRef.current}</span>
                             </div>
                             <div className="result-stat">
                                 <span className="stat-label">Wrong</span>
-                                <span className="stat-value wrong">{wrongCount}</span>
+                                <span className="stat-value wrong">{quizData.questions.length - correctCountRef.current}</span>
                             </div>
                             <div className="result-stat">
                                 <span className="stat-label">Score</span>
                                 <span className="stat-value score">
-                                    <AnimatedValue value={score} />
+                                    <AnimatedValue value={scoreRef.current} />
                                 </span>
                             </div>
                         </div>
 
                         <div className="results-actions">
                             <button className="btn btn-primary" onClick={resetGame}>Play Again</button>
+                            <button className="btn btn-secondary" onClick={handleExit} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>Exit Quiz</button>
                         </div>
                     </div>
                 </div>
@@ -340,3 +475,4 @@ export default function PlayerGame() {
         </div>
     );
 }
+

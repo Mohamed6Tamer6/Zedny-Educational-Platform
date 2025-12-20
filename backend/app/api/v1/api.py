@@ -19,7 +19,7 @@ Author: Zedny Development Team
 
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import health, auth, quizzes, generate
+from app.api.v1.endpoints import health, auth, quizzes, generate, admin
 
 api_router = APIRouter()
 
@@ -28,4 +28,5 @@ api_router.include_router(health.router, tags=["Health"])
 api_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 api_router.include_router(quizzes.router, prefix="/quizzes", tags=["Quizzes"])
 api_router.include_router(generate.router, prefix="/generate", tags=["Question Generation"])
+api_router.include_router(admin.router, prefix="/admin", tags=["Super Admin"])
 

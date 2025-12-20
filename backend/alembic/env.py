@@ -17,7 +17,7 @@ from app.db.session import Base
 from app.core.config import get_settings
 
 # Import all models here to ensure they are registered with Base.metadata
-from app.models import User, Quiz, Question, Choice  # noqa
+from app.models import User, Quiz, Question, Choice, QuizAttempt  # noqa
 
 settings = get_settings()
 

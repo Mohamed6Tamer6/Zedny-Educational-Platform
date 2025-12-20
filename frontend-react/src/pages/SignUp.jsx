@@ -35,6 +35,7 @@ export default function SignUp() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [fullName, setFullName] = useState('');
+    const [role, setRole] = useState('STUDENT');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const { login } = useAuth();
@@ -53,7 +54,7 @@ export default function SignUp() {
                     email,
                     password,
                     full_name: fullName,
-                    role: 'student'
+                    role: role
                 })
             });
 
@@ -74,7 +75,12 @@ export default function SignUp() {
 
             if (loginResponse.ok) {
                 const data = await loginResponse.json();
-                login(data.access_token);
+                login(data.access_token); // This does not persist user object immediately?
+                // We rely on AuthContext to fetch user or we should fetch 'me' here?
+                // AuthContext usually fetches user if token is present.
+                // But let's check AuthContext. It fetches user from localStorage or API.
+                // Wait, AuthContext logic: useEffect checks token.
+
                 showNotification('Account created and logged in successfully!', 'success');
                 navigate('/');
             } else {
@@ -144,6 +150,36 @@ export default function SignUp() {
                                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 placeholder="••••••••"
                             />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                I am a:
+                            </label>
+                            <div className="flex gap-4">
+                                <label className="flex items-center">
+                                    <input
+                                        type="radio"
+                                        name="role"
+                                        value="STUDENT"
+                                        checked={role === 'STUDENT'}
+                                        onChange={(e) => setRole(e.target.value)}
+                                        className="mr-2"
+                                    />
+                                    Student
+                                </label>
+                                <label className="flex items-center">
+                                    <input
+                                        type="radio"
+                                        name="role"
+                                        value="TEACHER"
+                                        checked={role === 'TEACHER'}
+                                        onChange={(e) => setRole(e.target.value)}
+                                        className="mr-2"
+                                    />
+                                    Teacher
+                                </label>
+                            </div>
                         </div>
 
                         <button

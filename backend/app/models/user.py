@@ -5,7 +5,7 @@ User Model Module
 This module defines the User database model and related enums.
 
 Classes:
-- UserRole: Enum defining user roles (STUDENT, TEACHER, ADMIN)
+- UserRole: Enum defining user roles (STUDENT, TEACHER, SUPER_ADMIN)
 - User: SQLAlchemy model representing a user in the system
 
 User Attributes:
@@ -34,7 +34,8 @@ class UserRole(str, enum.Enum):
     """User roles in the system."""
     STUDENT = "STUDENT"
     TEACHER = "TEACHER"
-    ADMIN = "ADMIN"
+    SUPER_ADMIN = "SUPER_ADMIN"
+    ADMIN = "ADMIN" # Legacy support
 
 
 class User(Base):

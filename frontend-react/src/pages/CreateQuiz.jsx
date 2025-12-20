@@ -32,12 +32,12 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import '../styles/Creator.css';
 
-const API_URL = 'http://127.0.0.1:8000/api/v1';
+const API_URL = '/api/v1';
 const DEFAULT_QUESTION = {
     id: 1,
     text: '',
@@ -60,11 +60,51 @@ export default function CreateQuiz() {
     const { token } = useAuth();
     const { showNotification } = useNotification();
     const navigate = useNavigate();
+    const { id: editId } = useParams(); // For edit mode
 
     // State
     const [quizTitle, setQuizTitle] = useState('');
     const [questions, setQuestions] = useState([JSON.parse(JSON.stringify(DEFAULT_QUESTION))]);
     const [currentQIndex, setCurrentQIndex] = useState(0);
+
+    // Fetch quiz if editing
+    useEffect(() => {
+        if (editId) {
+            fetchQuizForEdit();
+        }
+    }, [editId]);
+
+    const fetchQuizForEdit = async () => {
+        try {
+            const res = await fetch(`${API_URL}/quizzes/${editId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setQuizTitle(data.title);
+                // Transform backend data to frontend structure
+                const mappedQuestions = data.questions.map((q, idx) => ({
+                    id: q.id,
+                    text: q.text,
+                    type: q.question_type === 'multiple_select' ? 'multiple_choice' : q.question_type, // UI uses type+answerOptions combo
+                    timeLimit: q.time_limit,
+                    points: q.points === 1000 ? 10 : (q.points === 2000 ? 20 : q.points), // Map back if needed
+                    answerOptions: q.question_type === 'multiple_select' ? 'multiple_select' : 'single_select',
+                    answers: q.choices.map((c, cIdx) => ({
+                        text: c.text,
+                        isCorrect: c.is_correct,
+                        color: COLORS[cIdx % 4]
+                    }))
+                }));
+                setQuestions(mappedQuestions);
+            } else {
+                showNotification('Failed to load quiz for editing', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            showNotification('Error loading quiz', 'error');
+        }
+    };
 
     // Modals
     const [isAnswerModalOpen, setIsAnswerModalOpen] = useState(false);
@@ -183,35 +223,28 @@ export default function CreateQuiz() {
         }
 
         try {
-            console.log("DEBUG: Checking Auth Token in saveQuiz...");
-            console.log("DEBUG: Token Present:", !!token);
             if (!token) {
-                console.error("DEBUG: No auth token found!");
-                showNotification("Authentication error: No login token found. Please save your work elsewhere and re-login.", "error");
+                showNotification("Authentication error: No login token found. Please re-login.", "error");
                 return;
             }
 
             // Prepare the quiz data
             const quizData = {
                 title: quizTitle.trim(),
-                description: "Created via Web UI",  // Required by backend
-                is_public: true,  // Make sure this is boolean
+                description: "Created via Web UI",
+                is_public: true,
                 questions: questions.map((q, qIndex) => {
-                    // Filter out empty answers first
                     const nonEmptyAnswers = q.answers.filter(a => a.text && a.text.trim());
 
-                    // Ensure we have at least one answer
                     if (!nonEmptyAnswers || nonEmptyAnswers.length === 0) {
                         throw new Error(`Question ${qIndex + 1} must have at least one answer`);
                     }
 
-                    // Check for at least one correct answer (among non-empty answers)
                     const hasCorrectAnswer = nonEmptyAnswers.some(a => a.isCorrect);
                     if (!hasCorrectAnswer) {
                         throw new Error(`Question ${qIndex + 1} must have at least one correct answer`);
                     }
 
-                    // Determine question type based on options
                     let validQuestionType = q.type || 'multiple_choice';
                     if (validQuestionType === 'multiple_choice' && q.answerOptions === 'multiple_select') {
                         validQuestionType = 'multiple_select';
@@ -220,22 +253,23 @@ export default function CreateQuiz() {
                     return {
                         text: q.text.trim(),
                         question_type: validQuestionType,
-                        points: parseInt(q.points) || 10,  // Convert to number, default 10
-                        time_limit: parseInt(q.timeLimit) || 30,  // Convert to number
+                        points: parseInt(q.points) || 10,
+                        time_limit: parseInt(q.timeLimit) || 30,
                         choices: nonEmptyAnswers.map((a) => {
                             return {
                                 text: a.text.trim(),
-                                is_correct: a.isCorrect === true  // Ensure boolean
+                                is_correct: a.isCorrect === true
                             };
                         })
                     };
                 })
             };
 
-            console.log("DEBUG: Sending quiz data payload:", JSON.stringify(quizData, null, 2));
+            const endpoint = editId ? `${API_URL}/quizzes/${editId}` : `${API_URL}/quizzes/`;
+            const method = editId ? 'PUT' : 'POST';
 
-            const response = await fetch('http://127.0.0.1:8000/api/v1/quizzes/', {
-                method: 'POST',
+            const response = await fetch(endpoint, {
+                method: method,
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
@@ -243,44 +277,26 @@ export default function CreateQuiz() {
                 body: JSON.stringify(quizData)
             });
 
-            console.log("DEBUG: Response Status:", response.status);
             const responseData = await response.json().catch(() => ({}));
-            console.log("DEBUG: Response Body:", responseData);
 
             if (!response.ok) {
-                console.error("Backend error:", responseData);
-
-                // Handle 401 Unauthorized specifically
                 if (response.status === 401) {
                     showNotification("Session expired. Please log in again.", "error");
-                    setTimeout(() => {
-                        window.location.href = '/login'; // Force redirect
-                        localStorage.removeItem('token'); // Clear token
-                        localStorage.removeItem('user');
-                    }, 1500);
                     return;
                 }
-                console.error("Backend error:", responseData);
                 const errorDetail = responseData.detail || responseData.error || 'Unknown Backend Error';
-                const errorMsg = `Error ${response.status}: ${JSON.stringify(errorDetail)}`;
-                throw new Error(errorMsg);
+                throw new Error(JSON.stringify(errorDetail));
             }
 
-            showNotification('Quiz saved successfully!', 'success');
-            navigate(`/quiz/${responseData.id}`);
+            showNotification(editId ? 'Quiz updated successfully!' : 'Quiz saved successfully!', 'success');
+            navigate(`/teacher-dashboard`);
 
         } catch (error) {
-            console.error('Error saving quiz FULL DETAILS:', error);
-
-            // Show detailed error message from backend if available
-            let errorMessage = 'UNKNOWN ERROR (UPDATED): Please check console logs';
-            if (error.message) {
-                errorMessage = error.message;
-            }
-
-            showNotification(errorMessage, 'error');
+            console.error('Error saving quiz:', error);
+            showNotification(error.message || 'Failed to save quiz', 'error');
         }
     };
+
 
     // --- AI Generation ---
 

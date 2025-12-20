@@ -21,7 +21,7 @@
  * State:
  * - isLogin: Toggle between login/signup modes
  * - loading: Form submission in progress
- * - Form fields: email, password, firstName, lastName
+ * - Form fields: email, password, firstName, lastName, role
  * 
  * Author: Zedny Development Team
  * =============================================================================
@@ -31,10 +31,11 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
+import { GraduationCap, School } from 'lucide-react';
 // Import the External CSS
 import '../styles/Login.css';
 
-const API_URL = 'http://127.0.0.1:8000/api/v1';
+const API_URL = '/api/v1';
 
 export default function Login() {
     const [isLogin, setIsLogin] = useState(true);
@@ -45,6 +46,7 @@ export default function Login() {
     const [password, setPassword] = useState('');
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
+    const [role, setRole] = useState('STUDENT');
 
     // Password Visibility Toggle
     const [showPassword, setShowPassword] = useState(false);
@@ -83,6 +85,8 @@ export default function Login() {
                         const userData = await userResponse.json();
                         login(data.access_token, userData);
                         showNotification('Welcome back!', 'success');
+
+                        // Redirect based on role not needed here if App.jsx handles it via route guard on /dashboard
                         navigate('/dashboard');
                     } else {
                         throw new Error('Failed to fetch user details');
@@ -100,7 +104,7 @@ export default function Login() {
                         email,
                         password,
                         full_name: `${firstName} ${lastName}`.trim(),
-                        role: 'student'
+                        role: role
                     })
                 });
 
@@ -135,7 +139,6 @@ export default function Login() {
                         showNotification('Account created successfully!', 'success');
                         navigate('/dashboard');
                     } else {
-                        // If fetching user fails, just show message and ask to login (fallback)
                         setIsLogin(true);
                         showNotification('Account created! Please log in.', 'success');
                     }
@@ -159,13 +162,6 @@ export default function Login() {
             <div className="bg-blob blob-2"></div>
 
             <div className="auth-card">
-                {/* Close/Back Button - optional, functionality similar to existing app but user didn't explicitly ask for it here, keeping it simple or removed if not needed. 
-                    However, original design had a close button in image 1? 
-                    Image 1 shows an 'x' at top right. I'll add a simple one if it helps match 'theme'.
-                */}
-                {/* <button className="close-btn" onClick={() => navigate('/')}>×</button> */}
-
-                {/* Toggle Tabs */}
                 <div className="auth-tabs">
                     <button
                         className={`auth-tab ${!isLogin ? 'active' : ''}`}
@@ -194,26 +190,71 @@ export default function Login() {
 
                 <form className="auth-form" onSubmit={handleSubmit}>
                     {!isLogin && (
-                        <div className="form-row">
-                            <div className="input-group">
-                                <input
-                                    type="text"
-                                    placeholder="First Name"
-                                    value={firstName}
-                                    onChange={(e) => setFirstName(e.target.value)}
-                                    required={!isLogin}
-                                />
+                        <>
+                            <div className="form-row">
+                                <div className="input-group">
+                                    <input
+                                        type="text"
+                                        placeholder="First Name"
+                                        value={firstName}
+                                        onChange={(e) => setFirstName(e.target.value)}
+                                        required={!isLogin}
+                                    />
+                                </div>
+                                <div className="input-group">
+                                    <input
+                                        type="text"
+                                        placeholder="Last Name"
+                                        value={lastName}
+                                        onChange={(e) => setLastName(e.target.value)}
+                                        required={!isLogin}
+                                    />
+                                </div>
                             </div>
-                            <div className="input-group">
-                                <input
-                                    type="text"
-                                    placeholder="Last Name"
-                                    value={lastName}
-                                    onChange={(e) => setLastName(e.target.value)}
-                                    required={!isLogin}
-                                />
+
+                            <div className="input-group" style={{ color: 'white', marginBottom: '15px' }}>
+                                <label style={{ display: 'block', marginBottom: '10px', fontSize: '0.9rem', opacity: 0.8 }}>I am a:</label>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                                    <div
+                                        onClick={() => setRole('STUDENT')}
+                                        style={{
+                                            cursor: 'pointer',
+                                            borderRadius: '12px',
+                                            border: role === 'STUDENT' ? '2px solid #3b82f6' : '1px solid rgba(255,255,255,0.1)',
+                                            backgroundColor: role === 'STUDENT' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(255,255,255,0.05)',
+                                            padding: '15px',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        <GraduationCap size={24} color={role === 'STUDENT' ? '#3b82f6' : 'rgba(255,255,255,0.7)'} />
+                                        <span style={{ fontSize: '0.9rem', color: role === 'STUDENT' ? '#fff' : 'rgba(255,255,255,0.7)', fontWeight: role === 'STUDENT' ? '500' : 'normal' }}>Student</span>
+                                    </div>
+
+                                    <div
+                                        onClick={() => setRole('TEACHER')}
+                                        style={{
+                                            cursor: 'pointer',
+                                            borderRadius: '12px',
+                                            border: role === 'TEACHER' ? '2px solid #3b82f6' : '1px solid rgba(255,255,255,0.1)',
+                                            backgroundColor: role === 'TEACHER' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(255,255,255,0.05)',
+                                            padding: '15px',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        <School size={24} color={role === 'TEACHER' ? '#3b82f6' : 'rgba(255,255,255,0.7)'} />
+                                        <span style={{ fontSize: '0.9rem', color: role === 'TEACHER' ? '#fff' : 'rgba(255,255,255,0.7)', fontWeight: role === 'TEACHER' ? '500' : 'normal' }}>Teacher</span>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        </>
                     )}
 
                     <div className="input-group">
@@ -234,7 +275,6 @@ export default function Login() {
                             onChange={(e) => setPassword(e.target.value)}
                             required
                         />
-                        {/* Eye Icon for password toggle provided by styles if needed, but simplistic approach here */}
                         <div
                             className="password-toggle"
                             onClick={() => setShowPassword(!showPassword)}
@@ -253,19 +293,11 @@ export default function Login() {
                 </div>
 
                 <div className="social-buttons">
-                    <button type="button" className="btn-social">
-                        G
-                    </button>
-                    <button type="button" className="btn-social">
-                        F
-                    </button>
+                    <button type="button" className="btn-social">G</button>
+                    <button type="button" className="btn-social">F</button>
                 </div>
 
-                <div className="auth-footer">
-                    By creating an account, you agree to our <a href="#">Terms & Service</a>
-                </div>
-
-                <div className="auth-footer" style={{ marginTop: '10px' }}>
+                <div className="auth-footer" style={{ marginTop: '20px' }}>
                     {isLogin ? "Don't have an account? " : "Already have an account? "}
                     <span
                         style={{ color: '#fff', cursor: 'pointer', textDecoration: 'underline' }}
@@ -278,6 +310,3 @@ export default function Login() {
         </div>
     );
 }
-
-
-

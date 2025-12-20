@@ -99,3 +99,37 @@ class QuizList(QuizBase):
     
     class Config:
         from_attributes = True
+
+# --- Quiz Attempt Schemas ---
+class QuizAttemptBase(BaseModel):
+    quiz_id: int
+    score: int
+    total_questions: int
+    correct_answers: int
+    rank: Optional[str] = None
+
+class QuizAttemptCreate(QuizAttemptBase):
+    pass
+
+class QuizAttempt(QuizAttemptBase):
+    id: int
+    user_id: int
+    completed_at: datetime
+    quiz_title: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+# --- Statistics Schemas ---
+class TeacherStats(BaseModel):
+    total_quizzes: int
+    total_students: int
+    avg_completion_rate: float # 0.0 to 100.0
+    quizzes: List[dict] = [] # Optional extra info per quiz
+
+class StudentStats(BaseModel):
+    quizzes_taken: int
+    avg_score: float
+    best_rank: Optional[str] = None
+    performance_history: List[QuizAttempt] = []
+

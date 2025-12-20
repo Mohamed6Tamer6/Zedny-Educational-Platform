@@ -14,7 +14,7 @@
  * Routes:
  * - /login: User login page
  * - /signup: New user registration
- * - /dashboard: Main dashboard for authenticated users
+ * - /dashboard: Main dashboard (redirects based on role)
  * - /quizzes: List of user's quizzes
  * - /create-quiz: Quiz creation interface
  * - /quiz/:id: Quiz lobby/room
@@ -26,7 +26,7 @@
  */
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
@@ -36,9 +36,23 @@ import CreateQuiz from './pages/CreateQuiz';
 import Room from './pages/Room';
 import HostGame from './pages/HostGame';
 import PlayerGame from './pages/PlayerGame';
+import TeacherDashboard from './pages/TeacherDashboard';
+import StudentDashboard from './pages/StudentDashboard';
+import SuperAdminDashboard from './pages/SuperAdminDashboard';
+import MyPerformance from './pages/MyPerformance';
+import PrivateRoute from './components/PrivateRoute';
 
-// Protected Route wrapper could be added here, 
-// but for simplicity we handle redirection inside pages or rely on AuthContext state.
+function RoleRedirect() {
+    const { user, loading } = useAuth();
+
+    if (loading) return <div>Loading...</div>;
+
+    if (user?.role === 'TEACHER') return <Navigate to="/teacher-dashboard" replace />;
+    if (user?.role === 'STUDENT') return <Navigate to="/student-dashboard" replace />;
+    if (user?.role === 'SUPER_ADMIN') return <Navigate to="/admin-dashboard" replace />;
+
+    return <Navigate to="/login" replace />;
+}
 
 function App() {
     return (
@@ -46,23 +60,43 @@ function App() {
             <AuthProvider>
                 <NotificationProvider>
                     <Routes>
+                        {/* Public Routes */}
                         <Route path="/login" element={<Login />} />
                         <Route path="/signup" element={<SignUp />} />
-                        <Route path="/dashboard" element={<Dashboard />} />
-                        <Route path="/quizzes" element={<Quizzes />} />
-                        <Route path="/create-quiz" element={<CreateQuiz />} />
 
-                        {/* Room (Lobby) */}
-                        <Route path="/quiz/:id" element={<Room />} />
+                        {/* Role-Based Dashboards */}
+                        <Route element={<PrivateRoute allowedRoles={['TEACHER', 'SUPER_ADMIN']} />}>
+                            <Route path="/teacher-dashboard" element={<TeacherDashboard />} />
+                            <Route path="/create-quiz" element={<CreateQuiz />} />
+                            <Route path="/edit-quiz/:id" element={<CreateQuiz />} />
+                            <Route path="/quizzes" element={<Quizzes />} />
+                            <Route path="/game/host/:quizId" element={<HostGame />} />
+                        </Route>
 
-                        {/* Host Game View */}
-                        <Route path="/game/host/:quizId" element={<HostGame />} />
+                        <Route element={<PrivateRoute allowedRoles={['STUDENT', 'TEACHER', 'SUPER_ADMIN']} />}>
+                            <Route path="/student-dashboard" element={<StudentDashboard />} />
+                            <Route path="/play" element={<PlayerGame />} />
+                            <Route path="/my-performance" element={<MyPerformance />} />
+                        </Route>
 
-                        {/* Player Join & Play */}
-                        <Route path="/play" element={<PlayerGame />} />
+                        <Route element={<PrivateRoute allowedRoles={['SUPER_ADMIN']} />}>
+                            <Route path="/admin-dashboard" element={<SuperAdminDashboard />} />
+                        </Route>
 
-                        {/* Default redirect */}
-                        <Route path="/" element={<Navigate to="/login" replace />} />
+                        {/* Shared/Common Routes */}
+                        <Route element={<PrivateRoute allowedRoles={['TEACHER', 'STUDENT', 'SUPER_ADMIN']} />}>
+                            <Route path="/quiz/:id" element={<Room />} />
+                            {/* Legacy Dashboard route, now acts as redirector */}
+                            <Route path="/dashboard" element={<RoleRedirect />} />
+                        </Route>
+
+                        {/* Root Redirect */}
+                        <Route path="/" element={<PrivateRoute />}>
+                            <Route path="" element={<RoleRedirect />} />
+                        </Route>
+
+                        {/* Catch all */}
+                        <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>
                 </NotificationProvider>
             </AuthProvider>
@@ -71,4 +105,3 @@ function App() {
 }
 
 export default App;
-

@@ -254,6 +254,31 @@
     margin: 4px;
 }
 
+.answer-card.selected {
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.4), 0 8px 25px rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
+    z-index: 10;
+}
+
+.answer-card.selected::after {
+    content: '\f058';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: #22c55e;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
 .answers-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -263,6 +288,14 @@
     margin: 0 auto;
     padding: 0;
     box-sizing: border-box;
+}
+
+.game-actions-row {
+    margin-top: 40px;
+    display: flex;
+    justify-content: center;
+    min-height: 60px;
+    width: 100%;
 }
 
 /* --- FEEDBACK --- */

@@ -18,7 +18,7 @@ Schema Categories:
    - UserUpdate: Partial update fields
 
 Enums:
-- UserRole: STUDENT, TEACHER, ADMIN
+- UserRole: STUDENT, TEACHER, SUPER_ADMIN
 
 Author: Zedny Development Team
 =============================================================================
@@ -34,7 +34,8 @@ class UserRole(str, Enum):
     """User roles enum for Pydantic."""
     STUDENT = "STUDENT"
     TEACHER = "TEACHER"
-    ADMIN = "ADMIN"
+    SUPER_ADMIN = "SUPER_ADMIN"
+    ADMIN = "ADMIN" # Legacy
 
 
 # -------------------- Auth Schemas --------------------

@@ -52,6 +52,7 @@ class Quiz(Base):
     # Relationships
     teacher = relationship("User", backref="quizzes")
     questions = relationship("Question", back_populates="quiz", cascade="all, delete-orphan")
+    attempts = relationship("QuizAttempt", back_populates="quiz", cascade="all, delete-orphan")
 
 class QuestionType(str, enum.Enum):
     MULTIPLE_CHOICE = "multiple_choice"
@@ -88,3 +89,23 @@ class Choice(Base):
     
     # Relationships
     question = relationship("Question", back_populates="choices")
+
+class QuizAttempt(Base):
+    """Model to track student attempts and results for a quiz."""
+    __tablename__ = "quiz_attempts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    quiz_id = Column(Integer, ForeignKey("quizzes.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    
+    score = Column(Integer, default=0)
+    total_questions = Column(Integer, nullable=False)
+    correct_answers = Column(Integer, default=0)
+    rank = Column(String(50), nullable=True) # Legendary, Expert, etc.
+    
+    completed_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relationships
+    quiz = relationship("Quiz", back_populates="attempts")
+    user = relationship("User", backref="attempts")
+

@@ -5,7 +5,7 @@ Authentication Endpoints Module
 This module provides all authentication-related API endpoints.
 
 Endpoints:
-- POST /register: Create a new user account
+- POST /register: Create a new user account (Student/Teacher only)
 - POST /login: Authenticate and receive JWT token
 - GET /me: Get current authenticated user's information
 
@@ -16,63 +16,41 @@ Security:
 
 Dependencies:
 - get_current_user(): Injects the authenticated user into route handlers
-- oauth2_scheme: Extracts Bearer token from Authorization header
 
 Author: Zedny Development Team
 =============================================================================
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from jose import JWTError, jwt
 from datetime import timedelta
 
 from app.db.session import get_db
 from app.models.user import User, UserRole as DBUserRole
-from app.schemas.user import UserRegister, UserLogin, Token, TokenData, UserResponse
+from app.schemas.user import UserRegister, UserLogin, Token, UserResponse, UserRole
 from app.core.security import verify_password, get_password_hash, create_access_token
 from app.core.config import get_settings
+from app.api import deps
 
 settings = get_settings()
 router = APIRouter()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_PREFIX}/auth/login")
-
-
-async def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    db: AsyncSession = Depends(get_db)
-) -> User:
-    """Dependency to get the current authenticated user from JWT token."""
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        user_id: int = payload.get("sub")
-        if user_id is None:
-            raise credentials_exception
-        token_data = TokenData(user_id=user_id)
-    except JWTError:
-        raise credentials_exception
-    
-    result = await db.execute(select(User).where(User.id == token_data.user_id))
-    user = result.scalar_one_or_none()
-    
-    if user is None:
-        raise credentials_exception
-    if not user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
-    return user
-
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(user_data: UserRegister, db: AsyncSession = Depends(get_db)):
-    """Register a new user."""
+    """
+    Register a new user.
+    Restricted to Student and Teacher roles only.
+    """
+    # Block Super Admin registration
+    if user_data.role == UserRole.SUPER_ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot register as Super Admin"
+        )
+
     # Check if email already exists
     result = await db.execute(select(User).where(User.email == user_data.email))
     existing_user = result.scalar_one_or_none()
@@ -130,6 +108,6 @@ async def login(
 
 
 @router.get("/me", response_model=UserResponse)
-async def get_current_user_info(current_user: User = Depends(get_current_user)):
+async def get_current_user_info(current_user: User = Depends(deps.get_current_active_user)):
     """Get current authenticated user's information."""
     return current_user
