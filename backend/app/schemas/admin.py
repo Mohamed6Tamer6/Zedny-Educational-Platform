@@ -43,3 +43,9 @@ class QuizOverview(BaseModel):
     question_count: int
     attempt_count: int
     created_at: str
+
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    role: Optional[str] = None
+    is_active: Optional[bool] = None
+    email: Optional[str] = None

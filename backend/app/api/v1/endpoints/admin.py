@@ -27,7 +27,7 @@ from typing import List, Optional
 from app.db.session import get_db
 from app.models.user import User, UserRole
 from app.models.quiz import Quiz, Question, QuizAttempt
-from app.schemas.admin import AdminStats, UserOverview, QuizOverview
+from app.schemas.admin import AdminStats, UserOverview, QuizOverview, UserUpdate
 from app.api import deps
 
 router = APIRouter()
@@ -118,6 +118,59 @@ async def list_all_quizzes(
             "created_at": r.Quiz.created_at.isoformat()
         } for r in rows
     ]
+
+@router.put("/users/{user_id}", response_model=UserOverview)
+async def update_user(
+    user_id: int,
+    user_in: UserUpdate,
+    current_user: User = Depends(deps.get_current_active_superuser),
+    db: AsyncSession = Depends(get_db)
+):
+    """Update user details as admin."""
+    result = await db.execute(select(User).where(User.id == user_id))
+    db_user = result.scalar_one_or_none()
+    
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    update_data = user_in.dict(exclude_unset=True)
+    
+    for field, value in update_data.items():
+        if field == "role":
+            db_user.role = UserRole(value)
+        else:
+            setattr(db_user, field, value)
+            
+    db.add(db_user)
+    await db.commit()
+    await db.refresh(db_user)
+    
+    return {
+        "id": db_user.id,
+        "email": db_user.email,
+        "full_name": db_user.full_name,
+        "role": db_user.role.value,
+        "is_active": db_user.is_active,
+        "created_at": db_user.created_at.isoformat()
+    }
+
+@router.delete("/quizzes/{quiz_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def admin_delete_quiz(
+    quiz_id: int,
+    current_user: User = Depends(deps.get_current_active_superuser),
+    db: AsyncSession = Depends(get_db)
+):
+    """Global quiz deletion for moderation."""
+    query = select(Quiz).where(Quiz.id == quiz_id)
+    result = await db.execute(query)
+    quiz = result.scalar_one_or_none()
+    
+    if not quiz:
+        raise HTTPException(status_code=404, detail="Quiz not found")
+        
+    await db.delete(quiz)
+    await db.commit()
+    return None
 
 @router.get("/health-detailed")
 async def get_detailed_health(

@@ -27,17 +27,21 @@ const API_URL = '/api/v1';
 export default function SuperAdminDashboard() {
     const { user, token } = useAuth();
     const { showNotification } = useNotification();
-    const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({
         total_users: 0,
         total_quizzes: 0,
         system_uptime: '99.9%',
-        total_attempts: 0
+        total_attempts: 0,
+        total_teachers: 0,
+        total_students: 0
     });
 
     const [activeTab, setActiveTab] = useState('overview');
     const [viewData, setViewData] = useState([]);
     const [healthData, setHealthData] = useState(null);
+    const [editingUser, setEditingUser] = useState(null);
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     const fetchStats = async () => {
         if (!token) return;
@@ -98,6 +102,51 @@ export default function SuperAdminDashboard() {
             showNotification("Failed to fetch health data", "error");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleUpdateUser = async (e) => {
+        e.preventDefault();
+        setIsUpdating(true);
+        try {
+            const res = await fetch(`${API_URL}/admin/users/${editingUser.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(editingUser)
+            });
+            if (res.ok) {
+                const updatedUser = await res.json();
+                setViewData(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+                showNotification("User updated successfully", "success");
+                setEditingUser(null);
+            } else {
+                showNotification("Failed to update user", "error");
+            }
+        } catch (err) {
+            showNotification("Error updating user", "error");
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    const handleDeleteQuiz = async (quizId) => {
+        if (!window.confirm("Are you sure you want to delete this quiz? This action cannot be undone.")) return;
+        try {
+            const res = await fetch(`${API_URL}/admin/quizzes/${quizId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                setViewData(prev => prev.filter(q => q.id !== quizId));
+                showNotification("Quiz deleted successfully", "success");
+            } else {
+                showNotification("Failed to delete quiz", "error");
+            }
+        } catch (err) {
+            showNotification("Error deleting quiz", "error");
         }
     };
 
@@ -184,7 +233,7 @@ export default function SuperAdminDashboard() {
                                 <td><span className={`status-tag ${u.is_active ? 'active' : 'inactive'}`}>{u.is_active ? 'Active' : 'Banned'}</span></td>
                                 <td>{new Date(u.created_at).toLocaleDateString()}</td>
                                 <td>
-                                    <button className="btn-action-s">Edit</button>
+                                    <button className="btn-action-s" onClick={() => setEditingUser(u)}>Edit</button>
                                 </td>
                             </tr>
                         ))}
@@ -223,7 +272,7 @@ export default function SuperAdminDashboard() {
                                 <td>{q.attempt_count}</td>
                                 <td className="font-mono">{q.access_code}</td>
                                 <td>
-                                    <button className="btn-action-s danger">Delete</button>
+                                    <button className="btn-action-s danger" onClick={() => handleDeleteQuiz(q.id)}>Delete</button>
                                 </td>
                             </tr>
                         ))}
@@ -314,6 +363,67 @@ export default function SuperAdminDashboard() {
                         {activeTab === 'health' && renderHealth()}
                     </>
                 )}
+
+                {/* Edit User Modal */}
+                {editingUser && (
+                    <div className="admin-modal-overlay">
+                        <div className="admin-modal glassmorphism">
+                            <div className="modal-header">
+                                <h3>Edit User Account</h3>
+                                <button className="btn-close" onClick={() => setEditingUser(null)}>×</button>
+                            </div>
+                            <form onSubmit={handleUpdateUser} className="admin-edit-form">
+                                <div className="form-group">
+                                    <label>Full Name</label>
+                                    <input
+                                        type="text"
+                                        value={editingUser.full_name}
+                                        onChange={e => setEditingUser({ ...editingUser, full_name: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Email Address</label>
+                                    <input
+                                        type="email"
+                                        value={editingUser.email}
+                                        onChange={e => setEditingUser({ ...editingUser, email: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label>Account Role</label>
+                                        <select
+                                            value={editingUser.role}
+                                            onChange={e => setEditingUser({ ...editingUser, role: e.target.value })}
+                                        >
+                                            <option value="STUDENT">Student</option>
+                                            <option value="TEACHER">Teacher</option>
+                                            <option value="SUPER_ADMIN">Super Admin</option>
+                                        </select>
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Account Status</label>
+                                        <select
+                                            value={editingUser.is_active}
+                                            onChange={e => setEditingUser({ ...editingUser, is_active: e.target.value === 'true' })}
+                                        >
+                                            <option value="true">Active</option>
+                                            <option value="false">Banned</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className="modal-actions">
+                                    <button type="button" className="btn-cancel" onClick={() => setEditingUser(null)}>Cancel</button>
+                                    <button type="submit" className="btn-save" disabled={isUpdating}>
+                                        {isUpdating ? 'Saving...' : 'Save Changes'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
             </div>
 
 
@@ -395,6 +505,129 @@ export default function SuperAdminDashboard() {
                     grid-template-columns: repeat(3, 1fr);
                     gap: 20px;
                 }
+
+                /* Admin Modals */
+                .admin-modal-overlay {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0, 0, 0, 0.8);
+                    backdrop-filter: blur(8px);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 1000;
+                    animation: fadeIn 0.3s ease-out;
+                }
+
+                .admin-modal {
+                    width: 100%;
+                    max-width: 500px;
+                    padding: 40px;
+                    border-radius: 28px;
+                    position: relative;
+                }
+
+                .modal-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 30px;
+                }
+
+                .modal-header h3 { font-size: 1.5rem; }
+
+                .btn-close {
+                    background: none;
+                    border: none;
+                    color: rgba(255, 255, 255, 0.4);
+                    font-size: 2rem;
+                    cursor: pointer;
+                    transition: 0.2s;
+                    line-height: 1;
+                }
+
+                .btn-close:hover { color: #fff; }
+
+                .admin-edit-form {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 20px;
+                }
+
+                .form-group {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                }
+
+                .form-row {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 20px;
+                }
+
+                .form-group label {
+                    font-size: 0.8rem;
+                    color: rgba(255, 255, 255, 0.5);
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                }
+
+                .admin-edit-form input,
+                .admin-edit-form select {
+                    padding: 14px;
+                    border-radius: 12px;
+                    background: rgba(255, 255, 255, 0.05);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    color: #fff;
+                    font-size: 1rem;
+                    transition: 0.2s;
+                }
+
+                .admin-edit-form input:focus,
+                .admin-edit-form select:focus {
+                    background: rgba(255, 255, 255, 0.08);
+                    border-color: #ef4444;
+                    outline: none;
+                }
+
+                .modal-actions {
+                    display: flex;
+                    gap: 15px;
+                    margin-top: 10px;
+                }
+
+                .btn-cancel {
+                    flex: 1;
+                    padding: 14px;
+                    border-radius: 12px;
+                    background: rgba(255, 255, 255, 0.05);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    color: #fff;
+                    cursor: pointer;
+                }
+
+                .btn-save {
+                    flex: 2;
+                    padding: 14px;
+                    border-radius: 12px;
+                    background: #ef4444;
+                    color: #fff;
+                    font-weight: 600;
+                    cursor: pointer;
+                    border: none;
+                    transition: 0.2s;
+                }
+
+                .btn-save:hover {
+                    background: #dc2626;
+                    transform: translateY(-2px);
+                }
+
+                .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
 
                 /* Admin View Panel */
                 .admin-view-panel {
