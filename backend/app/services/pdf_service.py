@@ -1,3 +1,22 @@
+"""
+=============================================================================
+PDF Service Module
+=============================================================================
+This module provides utilities for extracting text content from PDF files.
+
+Functions:
+- extract_text_from_pdf(): Extract text from an uploaded PDF file
+
+Features:
+- Async file handling for non-blocking I/O
+- Content type validation
+- Error handling with descriptive messages
+- Uses PyPDF library for reliable PDF parsing
+
+Author: Zedny Development Team
+=============================================================================
+"""
+
 import io
 from pypdf import PdfReader
 from fastapi import UploadFile, HTTPException

@@ -1,3 +1,32 @@
+/**
+ * =============================================================================
+ * Global Styles & Notifications
+ * =============================================================================
+ * This file contains global styles and the notification toast system.
+ * 
+ * Sections:
+ * 1. CSS Variables & Font Import (Inter from Google Fonts)
+ * 2. Global Reset (box-sizing, margin, padding)
+ * 3. Notification Toast System
+ *    - Fixed positioning at top-right
+ *    - Slide-in/slide-out animations
+ *    - Success, Error, Warning, Info variants
+ * 4. Error Modal Component
+ *    - Centered overlay with blur backdrop
+ *    - Shake animation for icon
+ *    - Close button and action button
+ * 
+ * Color Scheme:
+ * - Background: #1a1a24 (dark blue-gray)
+ * - Success: #22c55e (green)
+ * - Error: #ef4444 (red)
+ * - Warning: #f59e0b (amber)
+ * - Info: #3b82f6 (blue)
+ * 
+ * Author: Zedny Development Team
+ * =============================================================================
+ */
+
 /* Global Styles & Notifications */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 

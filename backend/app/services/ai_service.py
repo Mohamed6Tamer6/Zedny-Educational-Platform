@@ -1,3 +1,32 @@
+"""
+=============================================================================
+AI Service Module (Google Gemini)
+=============================================================================
+This module provides AI-powered question generation using Google's Gemini API.
+
+Functions:
+- generate_quiz_questions(): Generate quiz questions from text content
+
+Features:
+- Uses Google Gemini Flash model for fast generation
+- Structured JSON output format
+- Configurable number of questions and difficulty
+- Automatic cleanup of markdown formatting from responses
+
+Prompt Engineering:
+- Expert quiz creator persona
+- Strict JSON array output format
+- Exactly one correct answer per question
+- 4 choices per question
+
+Dependencies:
+- Google Generative AI library
+- GEMINI_API_KEY environment variable
+
+Author: Zedny Development Team
+=============================================================================
+"""
+
 import google.generativeai as genai
 import json
 from app.core.config import get_settings

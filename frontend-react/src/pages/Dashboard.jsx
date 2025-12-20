@@ -1,3 +1,29 @@
+/**
+ * =============================================================================
+ * Dashboard Page Component
+ * =============================================================================
+ * The main landing page after user login. Displays platform overview and
+ * provides navigation to key features.
+ * 
+ * Layout:
+ * - Navigation bar with logo and logout
+ * - Left column: Welcome message, feature cards, action buttons
+ * - Right column: Floating decorative cards
+ * 
+ * Features Highlighted:
+ * - Interactive Quizzes
+ * - Live Sessions
+ * - Instant Feedback
+ * 
+ * Actions:
+ * - "Get Started": Navigate to quiz creation
+ * - "View Quizzes": Navigate to quiz list
+ * - "Logout": Clear auth and redirect to login
+ * 
+ * Author: Zedny Development Team
+ * =============================================================================
+ */
+
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import '../styles/Dashboard.css';

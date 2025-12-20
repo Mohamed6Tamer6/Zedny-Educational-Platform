@@ -1,3 +1,27 @@
+"""
+=============================================================================
+Authentication Endpoints Module
+=============================================================================
+This module provides all authentication-related API endpoints.
+
+Endpoints:
+- POST /register: Create a new user account
+- POST /login: Authenticate and receive JWT token
+- GET /me: Get current authenticated user's information
+
+Security:
+- OAuth2 password flow with Bearer tokens
+- JWT tokens with configurable expiration (default: 24 hours)
+- Password verification using bcrypt
+
+Dependencies:
+- get_current_user(): Injects the authenticated user into route handlers
+- oauth2_scheme: Extracts Bearer token from Authorization header
+
+Author: Zedny Development Team
+=============================================================================
+"""
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession

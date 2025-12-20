@@ -1,3 +1,25 @@
+"""
+=============================================================================
+Main Application Entry Point
+=============================================================================
+This module serves as the main entry point for the Zedny Educational Platform
+FastAPI application. It handles:
+
+- Application initialization and configuration
+- CORS middleware setup for cross-origin requests
+- API router registration
+- Static file serving for the React frontend (production mode)
+- SPA fallback routing for client-side navigation
+
+The application supports two modes:
+1. Development: Frontend runs on Vite dev server (port 5173)
+2. Production: Backend serves the built React app from /frontend-react/dist
+
+Author: Zedny Development Team
+Version: 1.0.0
+=============================================================================
+"""
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse

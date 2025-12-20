@@ -1,3 +1,27 @@
+"""
+=============================================================================
+User Model Module
+=============================================================================
+This module defines the User database model and related enums.
+
+Classes:
+- UserRole: Enum defining user roles (STUDENT, TEACHER, ADMIN)
+- User: SQLAlchemy model representing a user in the system
+
+User Attributes:
+- id: Primary key
+- email: Unique email address (used for login)
+- hashed_password: Bcrypt hashed password
+- full_name: User's display name
+- role: User's role in the system
+- is_active: Whether the account is active
+- is_verified: Whether the email is verified
+- created_at/updated_at: Timestamps
+
+Author: Zedny Development Team
+=============================================================================
+"""
+
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Enum as SQLEnum
 from sqlalchemy.sql import func
 from datetime import datetime

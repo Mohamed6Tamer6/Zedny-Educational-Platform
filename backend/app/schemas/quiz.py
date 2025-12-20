@@ -1,3 +1,32 @@
+"""
+=============================================================================
+Quiz Schemas Module
+=============================================================================
+This module defines Pydantic schemas for quiz, question, and choice
+data validation and serialization.
+
+Schema Hierarchy:
+1. Choice Schemas:
+   - ChoiceBase: Base choice with text and is_correct
+   - ChoiceCreate: For creating new choices
+   - Choice: Full choice with ID (response)
+
+2. Question Schemas:
+   - QuestionBase: Base question with text, type, points, time_limit
+   - QuestionCreate: For creating questions with choices
+   - Question: Full question with ID and choices (response)
+
+3. Quiz Schemas:
+   - QuizBase: Base quiz with title, description, is_public
+   - QuizCreate: For creating quizzes with questions
+   - QuizUpdate: Partial update fields
+   - Quiz: Full quiz with all relations (response)
+   - QuizList: Summary for list views
+
+Author: Zedny Development Team
+=============================================================================
+"""
+
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime

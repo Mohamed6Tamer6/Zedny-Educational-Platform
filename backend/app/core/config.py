@@ -1,3 +1,23 @@
+"""
+=============================================================================
+Application Configuration Module
+=============================================================================
+This module manages all application settings using Pydantic's BaseSettings.
+Settings are loaded from environment variables and .env file.
+
+Configuration Categories:
+- Database: PostgreSQL connection settings
+- Security: JWT secret keys and token expiration
+- App Settings: Project name, API prefix, debug mode
+- AI Services: API keys for Gemini, Google, and OpenAI
+
+Environment variables take precedence over .env file values.
+Use .env.example as a template for your local .env file.
+
+Author: Zedny Development Team
+=============================================================================
+"""
+
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 from typing import Optional

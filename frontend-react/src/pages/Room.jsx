@@ -1,3 +1,30 @@
+/**
+ * =============================================================================
+ * Quiz Room (Lobby) Page Component
+ * =============================================================================
+ * The waiting room/lobby page displayed after creating or selecting a quiz.
+ * Shows room code and allows starting the game.
+ * 
+ * Features:
+ * - Display quiz access code prominently
+ * - Copy code to clipboard
+ * - Show quiz statistics (questions count, players)
+ * - Start game button for host
+ * - Back navigation to quizzes list
+ * 
+ * Flow:
+ * 1. Fetch quiz details by ID
+ * 2. Display room code for sharing
+ * 3. Host clicks "Start Game" to begin
+ * 
+ * Future:
+ * - Real-time player count with WebSocket
+ * - Waiting animation for players
+ * 
+ * Author: Zedny Development Team
+ * =============================================================================
+ */
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';

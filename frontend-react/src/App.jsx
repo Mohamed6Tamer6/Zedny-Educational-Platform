@@ -1,3 +1,30 @@
+/**
+ * =============================================================================
+ * Main Application Component
+ * =============================================================================
+ * This is the root component of the Zedny Educational Platform frontend.
+ * It sets up routing and provides global context providers.
+ * 
+ * Structure:
+ * - BrowserRouter: Enables client-side routing
+ * - AuthProvider: Manages user authentication state
+ * - NotificationProvider: Handles toast notifications
+ * - Routes: Defines all application routes
+ * 
+ * Routes:
+ * - /login: User login page
+ * - /signup: New user registration
+ * - /dashboard: Main dashboard for authenticated users
+ * - /quizzes: List of user's quizzes
+ * - /create-quiz: Quiz creation interface
+ * - /quiz/:id: Quiz lobby/room
+ * - /game/host/:quizId: Host game view (for teachers)
+ * - /play: Player game view (for students)
+ * 
+ * Author: Zedny Development Team
+ * =============================================================================
+ */
+
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';

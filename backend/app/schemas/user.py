@@ -1,3 +1,29 @@
+"""
+=============================================================================
+User Schemas Module
+=============================================================================
+This module defines Pydantic schemas for user-related data validation
+and serialization.
+
+Schema Categories:
+1. Authentication Schemas:
+   - UserRegister: New user registration data
+   - UserLogin: Login credentials
+   - Token: JWT token response
+   - TokenData: Decoded token payload
+
+2. Response Schemas:
+   - UserBase: Common user fields
+   - UserResponse: Full user data for API responses
+   - UserUpdate: Partial update fields
+
+Enums:
+- UserRole: STUDENT, TEACHER, ADMIN
+
+Author: Zedny Development Team
+=============================================================================
+"""
+
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime

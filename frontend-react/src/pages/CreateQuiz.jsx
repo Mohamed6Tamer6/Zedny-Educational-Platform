@@ -1,3 +1,36 @@
+/**
+ * =============================================================================
+ * Create Quiz Page Component
+ * =============================================================================
+ * A comprehensive quiz builder with visual editor interface.
+ * Supports manual question creation and AI-powered generation.
+ * 
+ * Layout:
+ * - Top bar: Logo, quiz title input, save/exit buttons
+ * - Left sidebar: Question list with thumbnails
+ * - Main canvas: Question editor with answer grid
+ * - Right panel: Question settings and AI generation
+ * 
+ * Question Types:
+ * - multiple_choice: Standard quiz with 4 options
+ * - true_false: Boolean true/false questions
+ * - multiple_select: Multiple correct answers allowed
+ * 
+ * AI Generation:
+ * - Upload PDF document
+ * - Configure number of questions (3, 5, 10)
+ * - Select difficulty (beginner, medium, advanced)
+ * - Auto-generates questions using OpenAI
+ * 
+ * Settings per Question:
+ * - Time limit (10, 20, 30, 60 seconds)
+ * - Points (0, 10, 20)
+ * - Answer selection mode (single/multiple)
+ * 
+ * Author: Zedny Development Team
+ * =============================================================================
+ */
+
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';

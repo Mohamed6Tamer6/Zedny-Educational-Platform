@@ -1,3 +1,29 @@
+"""
+=============================================================================
+Quiz Models Module
+=============================================================================
+This module defines the database models for quizzes, questions, and choices.
+
+Classes:
+- Quiz: Main quiz container created by teachers
+- QuestionType: Enum for question types (multiple_choice, true_false, multiple_select)
+- Question: Individual questions within a quiz
+- Choice: Answer choices for each question
+
+Relationships:
+- Quiz has many Questions (one-to-many, cascade delete)
+- Question has many Choices (one-to-many, cascade delete)
+- Quiz belongs to User/Teacher (many-to-one)
+
+Features:
+- Unique access codes for joining quizzes
+- Configurable points and time limits per question
+- Support for multiple correct answers (multiple_select)
+
+Author: Zedny Development Team
+=============================================================================
+"""
+
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Enum as SQLEnum, Text, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func

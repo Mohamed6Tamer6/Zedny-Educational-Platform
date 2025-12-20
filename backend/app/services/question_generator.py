@@ -1,6 +1,34 @@
 """
-Question Generation Service using RAG (Retrieval-Augmented Generation)
-Generates quiz questions from PDF documents using OpenAI.
+=============================================================================
+Question Generator Service (OpenAI RAG)
+=============================================================================
+This module provides AI-powered question generation using OpenAI's GPT models
+with a RAG (Retrieval-Augmented Generation) approach.
+
+Classes:
+- QuestionGenerator: Main class for generating quiz questions
+
+Key Features:
+- PDF text extraction using PyPDF
+- Text chunking using LangChain's RecursiveCharacterTextSplitter
+- Question generation using OpenAI GPT-4o-mini
+- JSON structured output format
+- Validation and normalization of generated questions
+
+Workflow:
+1. Extract text from PDF bytes
+2. Split text into manageable chunks
+3. Send chunks to OpenAI with structured prompt
+4. Parse and validate JSON response
+5. Return normalized question objects
+
+Dependencies:
+- OpenAI API key (required)
+- PyPDF for PDF parsing
+- LangChain for text splitting
+
+Author: Zedny Development Team
+=============================================================================
 """
 import os
 import json

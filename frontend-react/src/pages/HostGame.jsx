@@ -1,3 +1,34 @@
+/**
+ * =============================================================================
+ * Host Game Page Component
+ * =============================================================================
+ * The interactive game interface for quiz hosts (teachers).
+ * Displays questions, manages timer, tracks score, and handles answers.
+ * 
+ * Game States:
+ * - loading: Fetching quiz data
+ * - playing: Active gameplay
+ * - results: Game finished, showing final score
+ * - error: Failed to load quiz
+ * 
+ * Features:
+ * - Auto-start on quiz load
+ * - Countdown timer per question
+ * - Score tracking with points calculation
+ * - Support for single and multiple select questions
+ * - Score overlay after each answer
+ * - Auto-advance when timer runs out
+ * - Final results with play again option
+ * 
+ * Question Types Supported:
+ * - multiple_choice: Single correct answer
+ * - multiple_select: Multiple correct answers
+ * - true_false: Boolean answers
+ * 
+ * Author: Zedny Development Team
+ * =============================================================================
+ */
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';

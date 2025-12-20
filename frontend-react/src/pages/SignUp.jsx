@@ -1,3 +1,29 @@
+/**
+ * =============================================================================
+ * Sign Up Page Component
+ * =============================================================================
+ * Standalone registration page for new user account creation.
+ * Provides a simple form with auto-login after successful registration.
+ * 
+ * Note: This page is an alternative to the Login page which has
+ * built-in toggle for registration. Both can be used.
+ * 
+ * Features:
+ * - Full name, email, password fields
+ * - Form validation
+ * - Auto-login after registration
+ * - Loading state during submission
+ * - Error handling with notifications
+ * - Link to login page
+ * 
+ * API Endpoints Used:
+ * - POST /auth/register: Create new account
+ * - POST /auth/login: Auto-login after registration
+ * 
+ * Author: Zedny Development Team
+ * =============================================================================
+ */
+
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -17,7 +43,7 @@ export default function SignUp() {
     const handleSignUp = async (e) => {
         e.preventDefault();
         setLoading(true);
-        
+
         try {
             // First register the user
             const registerResponse = await fetch(`${API_URL}/auth/register`, {
@@ -71,7 +97,7 @@ export default function SignUp() {
                     <h1 className="text-3xl font-bold text-gray-900">Create Account</h1>
                     <p className="mt-2 text-gray-600">Sign up to get started</p>
                 </div>
-                
+
                 <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200">
                     <form className="space-y-6" onSubmit={handleSignUp}>
                         <div>

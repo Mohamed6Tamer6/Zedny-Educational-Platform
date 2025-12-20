@@ -1,3 +1,34 @@
+/**
+ * =============================================================================
+ * Player Game Page Component
+ * =============================================================================
+ * The game interface for students/players joining via room code.
+ * Handles joining, playing, and displaying results.
+ * 
+ * Game Flow Steps:
+ * 1. join: Enter room code and player name
+ * 2. waiting: Brief loading screen before game starts
+ * 3. playing: Answer questions with timer
+ * 4. results: Final score and rank display
+ * 
+ * Features:
+ * - Join game by 6-character room code
+ * - Countdown timer for each question
+ * - Immediate feedback on answer (correct/wrong)
+ * - Score tracking with animated display
+ * - Rank system based on performance
+ * - Play again option
+ * 
+ * Rank System:
+ * - Legendary: 80%+ correct
+ * - Expert: 60-79% correct
+ * - Intermediate: 40-59% correct
+ * - Novice: Below 40% correct
+ * 
+ * Author: Zedny Development Team
+ * =============================================================================
+ */
+
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';

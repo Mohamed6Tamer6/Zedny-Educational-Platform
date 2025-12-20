@@ -1,3 +1,32 @@
+/**
+ * =============================================================================
+ * Login Page Component
+ * =============================================================================
+ * Handles user authentication - both login and registration in one component.
+ * Uses a toggle between "Sign in" and "Sign up" modes.
+ * 
+ * Features:
+ * - Email/password authentication
+ * - Toggle between login and registration
+ * - Password visibility toggle
+ * - Auto-login after successful registration
+ * - Form validation
+ * - Error handling with notifications
+ * 
+ * API Endpoints Used:
+ * - POST /auth/login: Authenticate existing user
+ * - POST /auth/register: Create new account
+ * - GET /auth/me: Fetch user details after login
+ * 
+ * State:
+ * - isLogin: Toggle between login/signup modes
+ * - loading: Form submission in progress
+ * - Form fields: email, password, firstName, lastName
+ * 
+ * Author: Zedny Development Team
+ * =============================================================================
+ */
+
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';

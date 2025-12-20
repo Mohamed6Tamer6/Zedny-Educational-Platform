@@ -1,124 +1,397 @@
-# Zedny Educational Platform
+<div align="center">
 
-## 🌟 Overview
-Zedny is an interactive, gamified educational platform designed to modernize the learning experience. It combines the engagement of Kahoot-style quizzes with robust classroom management features. The platform serves two main user roles: **Teachers** who can create dynamic quizzes (manually or via AI) and mange sessions, and **Students** who can join live games, track their progress, and compete on leaderboards.
+# 🎓 Zedny Educational Platform
 
+### منصة زدني التعليمية التفاعلية
 
-## 🏗️ Project Structure
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-18+-61DAFB.svg)](https://reactjs.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-336791.svg)](https://www.postgresql.org/)
 
-The project follows a clean separation of concerns with a backend API and a React frontend.
+**منصة تعليمية متكاملة تجمع بين التفاعل والتلعيب لتحسين تجربة التعلم**
+
+[العرض التجريبي](#demo) • [التثبيت](#installation) • [التوثيق](#documentation) • [المساهمة](#contributing)
+
+</div>
+
+---
+
+## 📖 نظرة عامة
+
+**Zedny** هي منصة تعليمية تفاعلية مبتكرة مصممة لتحويل التعلم التقليدي إلى تجربة ممتعة وتفاعلية. تم تطوير المنصة باستخدام أحدث التقنيات لتوفير بيئة تعليمية حديثة تدعم كلاً من المعلمين والطلاب.
+
+### 🎯 الرؤية
+تهدف المنصة إلى سد الفجوة بين التعليم التقليدي والتكنولوجيا الحديثة من خلال توفير أدوات تفاعلية تجعل التعلم أكثر متعة وفعالية.
+
+### ✨ المميزات الرئيسية
+
+| الميزة | الوصف |
+|--------|-------|
+| 🧠 **توليد الأسئلة بالذكاء الاصطناعي** | استخدام Google Gemini و OpenAI لتوليد أسئلة تلقائياً من ملفات PDF |
+| 📝 **أنواع أسئلة متعددة** | دعم الاختيار المتعدد، صح/خطأ، والاختيار المتعدد المتعدد |
+| ⏱️ **مؤقت للأسئلة** | نظام توقيت قابل للتخصيص لكل سؤال |
+| 🏆 **نظام النقاط والترتيب** | تتبع أداء الطلاب وعرض لوحة المتصدرين |
+| 🔐 **نظام مصادقة آمن** | تسجيل دخول آمن باستخدام JWT |
+| 📱 **تصميم متجاوب** | يعمل على جميع الأجهزة |
+
+---
+
+## 🏗️ معمارية المشروع
 
 ```
 zedny-project/
-├── backend/                # FastAPI Application
-│   ├── app/
-│   │   ├── api/            # API Endpoints (Routes)
-│   │   ├── core/           # Config & Security definitions
-│   │   ├── db/             # Database connection & models
-│   │   ├── models/         # SQLAlchemy Database Models
-│   │   ├── schemas/        # Pydantic Schemas for validation
-│   │   ├── services/       # Business logic (AI, etc.)
-│   │   └── main.py         # App entry point
-│   ├── alembic/            # Database migrations
-│   ├── .env                # Environment variables
-│   └── run.py              # Server runner script
 │
-├── frontend-react/         # React Frontend (Vite)
-│   ├── src/                # React source code
-│   ├── index.html          # SPA entry
-│   ├── package.json        # Frontend dependencies & scripts
-│   └── vite.config.js      # Vite config (dev server + API proxy)
+├── 📁 backend/                          # الخادم الخلفي (FastAPI)
+│   ├── 📁 app/                          # التطبيق الرئيسي
+│   │   ├── 📁 api/                      # نقاط النهاية API
+│   │   │   └── 📁 v1/                   # الإصدار الأول من الـ API
+│   │   │       ├── 📁 endpoints/        # نقاط النهاية
+│   │   │       │   ├── auth.py          # مصادقة المستخدمين
+│   │   │       │   ├── quizzes.py       # إدارة الاختبارات
+│   │   │       │   ├── generate.py      # توليد الأسئلة بالـ AI
+│   │   │       │   └── health.py        # فحص حالة الخادم
+│   │   │       └── api.py               # تجميع الـ Routes
+│   │   │
+│   │   ├── 📁 core/                     # الإعدادات الأساسية
+│   │   │   ├── config.py                # إعدادات التطبيق
+│   │   │   └── security.py              # أمان وتشفير كلمات المرور
+│   │   │
+│   │   ├── 📁 db/                       # قاعدة البيانات
+│   │   │   └── session.py               # إدارة جلسات قاعدة البيانات
+│   │   │
+│   │   ├── 📁 models/                   # نماذج قاعدة البيانات
+│   │   │   ├── user.py                  # نموذج المستخدم
+│   │   │   └── quiz.py                  # نماذج الاختبار والأسئلة
+│   │   │
+│   │   ├── 📁 schemas/                  # مخططات التحقق (Pydantic)
+│   │   │   ├── user.py                  # مخططات المستخدم
+│   │   │   └── quiz.py                  # مخططات الاختبار
+│   │   │
+│   │   ├── 📁 services/                 # الخدمات والمنطق
+│   │   │   ├── ai_service.py            # خدمة Gemini AI
+│   │   │   ├── question_generator.py    # مولد الأسئلة (OpenAI)
+│   │   │   └── pdf_service.py           # استخراج النص من PDF
+│   │   │
+│   │   └── main.py                      # نقطة دخول التطبيق
+│   │
+│   ├── 📁 alembic/                      # ترحيل قاعدة البيانات
+│   │   └── 📁 versions/                 # ملفات الترحيل
+│   │
+│   ├── .env                             # متغيرات البيئة (سري)
+│   ├── .env.example                     # مثال لمتغيرات البيئة
+│   └── run.py                           # سكريبت تشغيل الخادم
 │
-├── requirements.txt        # Python dependencies
-└── README.md               # Project Documentation
+├── 📁 frontend-react/                   # الواجهة الأمامية (React)
+│   ├── 📁 src/                          # الكود المصدري
+│   │   ├── 📁 components/               # المكونات القابلة لإعادة الاستخدام
+│   │   │   └── ErrorBoundary.jsx        # معالجة الأخطاء
+│   │   │
+│   │   ├── 📁 context/                  # سياق React
+│   │   │   ├── AuthContext.jsx          # سياق المصادقة
+│   │   │   └── NotificationContext.jsx  # سياق الإشعارات
+│   │   │
+│   │   ├── 📁 pages/                    # صفحات التطبيق
+│   │   │   ├── Login.jsx                # صفحة تسجيل الدخول
+│   │   │   ├── SignUp.jsx               # صفحة التسجيل
+│   │   │   ├── Dashboard.jsx            # لوحة التحكم
+│   │   │   ├── Quizzes.jsx              # قائمة الاختبارات
+│   │   │   ├── CreateQuiz.jsx           # إنشاء اختبار جديد
+│   │   │   ├── Room.jsx                 # غرفة الانتظار
+│   │   │   ├── HostGame.jsx             # واجهة المعلم للعبة
+│   │   │   └── PlayerGame.jsx           # واجهة الطالب للعبة
+│   │   │
+│   │   ├── 📁 styles/                   # ملفات CSS
+│   │   │   ├── Login.css                # أنماط تسجيل الدخول
+│   │   │   ├── Dashboard.css            # أنماط لوحة التحكم
+│   │   │   ├── Creator.css              # أنماط إنشاء الاختبار
+│   │   │   ├── Game.css                 # أنماط اللعبة
+│   │   │   ├── Quizzes.css              # أنماط قائمة الاختبارات
+│   │   │   └── Room.css                 # أنماط الغرفة
+│   │   │
+│   │   ├── App.jsx                      # المكون الرئيسي والتوجيه
+│   │   ├── main.jsx                     # نقطة الدخول
+│   │   └── index.css                    # الأنماط العامة
+│   │
+│   ├── index.html                       # صفحة HTML الرئيسية
+│   ├── package.json                     # تبعيات المشروع
+│   └── vite.config.js                   # إعدادات Vite
+│
+├── requirements.txt                     # تبعيات Python
+├── .gitignore                           # ملفات Git المتجاهلة
+└── README.md                            # توثيق المشروع
 ```
-
-## 🚀 How to Run the Project
-
-### Prerequisites
-- Python 3.9+
-- PostgreSQL
-- Node.js (Required for the React frontend)
-
-### 1. Setup Backend
-1. Navigate to the `backend` directory.
-2. Create virtual environment:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-3. Install dependencies:
-   ```bash
-   pip install -r ../requirements.txt
-   ```
-4. Configure Database:
-   - Create a PostgreSQL database named `zedny_db`.
-   - Update `.env` file with your DB credentials (`DATABASE_URL`).
-5. Run Migrations:
-   ```bash
-   alembic upgrade head
-   ```
-
-### 2. Start the Server
-You can start the server using the provided helper script:
-
-**Windows (PowerShell):**
-```powershell
-.\backend\start_server.ps1
-```
-
-**Manual:**
-```bash
-python backend/run.py
-```
-
-The server will start at `http://127.0.0.1:8000`.
-
-### 3. Run the React Frontend (Development)
-1. Navigate to the React frontend directory:
-   ```bash
-   cd frontend-react
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Start the dev server:
-   ```bash
-   npm run dev
-   ```
-4. Open the app at `http://localhost:5173`.
-
-The React dev server is configured to proxy API calls to the backend under `/api`.
-
-### 4. Serve React from the Backend (Production-like)
-1. Build the React app:
-   ```bash
-   cd frontend-react
-   npm run build
-   ```
-2. Start the backend (as usual). If `frontend-react/dist` exists, the backend serves the built React SPA at `http://127.0.0.1:8000`.
-
-## �️ Technologies Used
-
-**Backend:**
-- **Language:** Python 3.9+
-- **Framework:** FastAPI
-- **Database:** PostgreSQL
-- **ORM:** SQLAlchemy (Async)
-- **AI:** Google Gemini API
-
-**Frontend:**
-- **Framework:** React
-- **Build Tool:** Vite
-- **Routing:** react-router-dom
-- **Icons:** lucide-react
-
-## 🔮 Future Vision
-
-We are committed to evolving Zedny into a comprehensive educational ecosystem. Our immediate roadmap includes:
-
-- **New Game Modes:** Expanding beyond standard quizzes to include diverse game types.
-- **Role-Based Access Control:** Developing dedicated secure portals for **Students** and **Teachers**.
 
 ---
+
+## 🛠️ التقنيات المستخدمة
+
+### Backend (الخادم الخلفي)
+
+| التقنية | الغرض | السبب |
+|---------|-------|-------|
+| **Python 3.9+** | لغة البرمجة | قوية، واضحة، ومدعومة بمجتمع كبير |
+| **FastAPI** | إطار العمل | سريع، حديث، async-native، وتوثيق تلقائي |
+| **SQLAlchemy 2.0** | ORM | دعم async، type hints، وأداء عالي |
+| **PostgreSQL** | قاعدة البيانات | موثوقة، قوية، ودعم ممتاز للـ JSON |
+| **Alembic** | ترحيل قاعدة البيانات | إدارة تغييرات schema بسهولة |
+| **Pydantic** | التحقق من البيانات | type-safe validation وتحويل البيانات |
+| **python-jose** | JWT | التحقق والمصادقة الآمنة |
+| **Passlib + bcrypt** | تشفير كلمات المرور | أمان عالي المستوى |
+
+### Frontend (الواجهة الأمامية)
+
+| التقنية | الغرض | السبب |
+|---------|-------|-------|
+| **React 18** | مكتبة UI | مكونات قابلة لإعادة الاستخدام وأداء ممتاز |
+| **Vite** | أداة البناء | سرعة فائقة في التطوير والبناء |
+| **React Router v6** | التوجيه | إدارة التنقل بين الصفحات |
+| **Lucide React** | الأيقونات | أيقونات حديثة وقابلة للتخصيص |
+| **CSS Modules** | التصميم | أنماط منظمة وقابلة للصيانة |
+
+### AI Services (خدمات الذكاء الاصطناعي)
+
+| التقنية | الغرض |
+|---------|-------|
+| **Google Gemini** | توليد أسئلة من النصوص |
+| **OpenAI GPT-4** | توليد أسئلة متقدمة من PDF |
+| **LangChain** | تقسيم النصوص الطويلة |
+| **PyPDF** | استخراج النص من ملفات PDF |
+
+---
+
+## 📋 خطوات التطوير
+
+### المرحلة 1: التخطيط والإعداد
+1. ✅ تحديد متطلبات المشروع والميزات الأساسية
+2. ✅ تصميم معمارية النظام (Backend + Frontend)
+3. ✅ اختيار التقنيات المناسبة
+4. ✅ إعداد بيئة التطوير
+
+### المرحلة 2: تطوير الخادم الخلفي
+1. ✅ إنشاء هيكل مشروع FastAPI
+2. ✅ تصميم قاعدة البيانات (Users, Quizzes, Questions, Choices)
+3. ✅ تنفيذ نظام المصادقة JWT
+4. ✅ إنشاء CRUD للاختبارات والأسئلة
+5. ✅ دمج خدمات AI لتوليد الأسئلة
+
+### المرحلة 3: تطوير الواجهة الأمامية
+1. ✅ إعداد مشروع React مع Vite
+2. ✅ تصميم نظام التوجيه والصفحات
+3. ✅ تنفيذ نظام المصادقة في الـ Frontend
+4. ✅ تطوير واجهة إنشاء الاختبارات
+5. ✅ تطوير واجهة اللعب التفاعلية
+
+### المرحلة 4: الدمج والاختبار
+1. ✅ ربط Frontend مع Backend API
+2. ✅ اختبار جميع الميزات
+3. ✅ تحسين الأداء وتجربة المستخدم
+4. ✅ إصلاح الأخطاء والمشاكل
+
+---
+
+## 🚀 التثبيت والتشغيل
+
+### المتطلبات الأساسية
+
+- **Python 3.9+**
+- **Node.js 18+**
+- **PostgreSQL 15+**
+- **Git**
+
+### 1️⃣ استنساخ المشروع
+
+```bash
+git clone https://github.com/your-username/zedny-project.git
+cd zedny-project
+```
+
+### 2️⃣ إعداد الخادم الخلفي
+
+```bash
+# إنشاء بيئة افتراضية
+python -m venv venv
+
+# تفعيل البيئة
+# Windows:
+.\venv\Scripts\activate
+# Linux/Mac:
+source venv/bin/activate
+
+# تثبيت التبعيات
+pip install -r requirements.txt
+```
+
+### 3️⃣ إعداد قاعدة البيانات
+
+```bash
+# إنشاء قاعدة بيانات PostgreSQL
+createdb zedny_db
+
+# نسخ ملف البيئة
+cp backend/.env.example backend/.env
+
+# تعديل الإعدادات في .env
+# DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/zedny_db
+# GEMINI_API_KEY=your_gemini_api_key
+# OPENAI_API_KEY=your_openai_api_key (اختياري)
+```
+
+### 4️⃣ تشغيل الترحيلات
+
+```bash
+cd backend
+alembic upgrade head
+```
+
+### 5️⃣ تشغيل الخادم
+
+```bash
+python run.py
+# أو
+uvicorn app.main:app --reload
+```
+
+الخادم سيعمل على: `http://localhost:8000`
+
+### 6️⃣ إعداد الواجهة الأمامية
+
+```bash
+cd frontend-react
+
+# تثبيت التبعيات
+npm install
+
+# تشغيل في وضع التطوير
+npm run dev
+```
+
+الواجهة ستعمل على: `http://localhost:5173`
+
+---
+
+## 🔗 نقاط النهاية API
+
+### المصادقة
+| Method | Endpoint | الوصف |
+|--------|----------|-------|
+| POST | `/api/v1/auth/register` | تسجيل مستخدم جديد |
+| POST | `/api/v1/auth/login` | تسجيل الدخول |
+| GET | `/api/v1/auth/me` | الحصول على بيانات المستخدم الحالي |
+
+### الاختبارات
+| Method | Endpoint | الوصف |
+|--------|----------|-------|
+| GET | `/api/v1/quizzes/` | قائمة الاختبارات |
+| POST | `/api/v1/quizzes/` | إنشاء اختبار جديد |
+| GET | `/api/v1/quizzes/{id}` | تفاصيل اختبار |
+| DELETE | `/api/v1/quizzes/{id}` | حذف اختبار |
+| POST | `/api/v1/quizzes/generate-from-pdf` | توليد أسئلة من PDF |
+
+### التوثيق التفاعلي
+- **Swagger UI**: `http://localhost:8000/docs`
+- **ReDoc**: `http://localhost:8000/redoc`
+
+---
+
+## 📊 نموذج البيانات
+
+```mermaid
+erDiagram
+    User ||--o{ Quiz : creates
+    Quiz ||--o{ Question : contains
+    Question ||--o{ Choice : has
+
+    User {
+        int id PK
+        string email UK
+        string hashed_password
+        string full_name
+        enum role
+        boolean is_active
+        datetime created_at
+    }
+
+    Quiz {
+        int id PK
+        string title
+        text description
+        string access_code UK
+        boolean is_public
+        int teacher_id FK
+        datetime created_at
+    }
+
+    Question {
+        int id PK
+        text text
+        enum question_type
+        int points
+        int time_limit
+        int quiz_id FK
+    }
+
+    Choice {
+        int id PK
+        string text
+        boolean is_correct
+        int question_id FK
+    }
+```
+
+---
+
+## 🔒 الأمان
+
+- ✅ تشفير كلمات المرور باستخدام bcrypt
+- ✅ مصادقة JWT مع انتهاء صلاحية التوكن
+- ✅ حماية CORS للطلبات العابرة
+- ✅ التحقق من صحة المدخلات باستخدام Pydantic
+- ✅ استخدام prepared statements لمنع SQL Injection
+
+---
+
+## 🌟 الميزات المستقبلية
+
+- [ ] غرف لعب متزامنة في الوقت الفعلي (WebSocket)
+- [ ] لوحة متصدرين عالمية
+- [ ] أنواع ألعاب إضافية (Puzzle, Racing, etc.)
+- [ ] تطبيق موبايل (React Native)
+- [ ] تحليلات متقدمة للأداء
+- [ ] دعم متعدد اللغات
+- [ ] نظام إشعارات فورية
+
+---
+
+## 👥 المساهمة
+
+نرحب بالمساهمات! يرجى اتباع الخطوات التالية:
+
+1. Fork المشروع
+2. إنشاء branch للميزة (`git checkout -b feature/AmazingFeature`)
+3. Commit التغييرات (`git commit -m 'Add some AmazingFeature'`)
+4. Push إلى الـ branch (`git push origin feature/AmazingFeature`)
+5. فتح Pull Request
+
+---
+
+## 📄 الترخيص
+
+هذا المشروع مرخص تحت رخصة MIT - انظر ملف [LICENSE](LICENSE) للتفاصيل.
+
+---
+
+## 📞 التواصل
+
+- **البريد الإلكتروني**: support@zedny.edu
+- **GitHub Issues**: للإبلاغ عن المشاكل
+- **Discussions**: للأسئلة والاقتراحات
+
+---
+
+<div align="center">
+
+**صُنع بـ ❤️ لتحسين التعليم**
+
+</div>

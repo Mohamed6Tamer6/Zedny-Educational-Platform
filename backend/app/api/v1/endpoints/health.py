@@ -1,3 +1,21 @@
+"""
+=============================================================================
+Health Check Endpoint Module
+=============================================================================
+This module provides a simple health check endpoint for monitoring the API.
+
+Used by:
+- Load balancers to check application health
+- Monitoring systems for uptime tracking
+- Deployment pipelines for readiness checks
+
+Endpoint:
+- GET /health: Returns API status
+
+Author: Zedny Development Team
+=============================================================================
+"""
+
 from fastapi import APIRouter
 
 router = APIRouter()

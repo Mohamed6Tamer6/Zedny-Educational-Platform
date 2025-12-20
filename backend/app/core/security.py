@@ -1,3 +1,23 @@
+"""
+=============================================================================
+Security Utilities Module
+=============================================================================
+This module provides security-related utilities for the application:
+
+Functions:
+- verify_password(): Verify a plain password against a hashed password
+- get_password_hash(): Hash a plain password using bcrypt
+- create_access_token(): Generate a JWT access token
+
+Security Features:
+- Password hashing using bcrypt (industry standard)
+- JWT tokens with configurable expiration
+- Secure token encoding using HS256 algorithm
+
+Author: Zedny Development Team
+=============================================================================
+"""
+
 from passlib.context import CryptContext
 from jose import jwt
 from datetime import datetime, timedelta

@@ -1,3 +1,33 @@
+/**
+ * =============================================================================
+ * Notification Context Module
+ * =============================================================================
+ * This module provides a global notification/toast system using React Context.
+ * Notifications auto-dismiss after 5 seconds.
+ * 
+ * Context Values:
+ * - showNotification(message, type, title): Display a notification toast
+ * 
+ * Notification Types:
+ * - 'success': Green checkmark icon
+ * - 'error': Red exclamation icon
+ * - 'warning': Yellow warning icon
+ * - 'info': Blue info icon (default)
+ * 
+ * Features:
+ * - Auto-dismiss after 5 seconds
+ * - Manual dismiss with close button
+ * - Stacking multiple notifications
+ * - Animated transitions
+ * 
+ * Usage:
+ * const { showNotification } = useNotification();
+ * showNotification('Quiz saved!', 'success');
+ * 
+ * Author: Zedny Development Team
+ * =============================================================================
+ */
+
 import { createContext, useContext, useState, useCallback } from 'react';
 
 const NotificationContext = createContext(null);
@@ -30,9 +60,9 @@ export const NotificationProvider = ({ children }) => {
                 {notifications.map(n => (
                     <div key={n.id} className={`notification-toast ${n.type}`}>
                         <i className={`fas notification-icon ${n.type === 'success' ? 'fa-check-circle' :
-                                n.type === 'error' ? 'fa-exclamation-circle' :
-                                    n.type === 'warning' ? 'fa-exclamation-triangle' :
-                                        'fa-info-circle'
+                            n.type === 'error' ? 'fa-exclamation-circle' :
+                                n.type === 'warning' ? 'fa-exclamation-triangle' :
+                                    'fa-info-circle'
                             }`}></i>
                         <div className="notification-content">
                             <div className="notification-title">{n.title}</div>

@@ -1,3 +1,32 @@
+/**
+ * =============================================================================
+ * Error Boundary Component
+ * =============================================================================
+ * React Error Boundary for catching JavaScript errors in child components.
+ * Prevents the entire app from crashing and shows a fallback UI.
+ * 
+ * Features:
+ * - Catches errors during rendering, lifecycle methods, and constructors
+ * - Logs errors to console for debugging
+ * - Displays user-friendly error message
+ * - Provides "Reload Page" button for recovery
+ * - Shows detailed stack trace in development
+ * 
+ * Usage:
+ * <ErrorBoundary>
+ *   <YourComponent />
+ * </ErrorBoundary>
+ * 
+ * Note: Error boundaries do NOT catch errors in:
+ * - Event handlers
+ * - Async code (setTimeout, fetch, etc.)
+ * - Server-side rendering
+ * - Errors thrown in the error boundary itself
+ * 
+ * Author: Zedny Development Team
+ * =============================================================================
+ */
+
 import React from 'react';
 
 class ErrorBoundary extends React.Component {

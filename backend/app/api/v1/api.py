@@ -1,3 +1,22 @@
+"""
+=============================================================================
+API V1 Router Aggregator
+=============================================================================
+This module aggregates all API v1 endpoint routers into a single router.
+The combined router is then mounted on the main FastAPI app with /api/v1 prefix.
+
+Included Routers:
+- health: Health check endpoint (/health)
+- auth: Authentication endpoints (/auth/*)
+- quizzes: Quiz CRUD operations (/quizzes/*)
+- generate: AI question generation (/generate/*)
+
+Tags are used for OpenAPI documentation grouping.
+
+Author: Zedny Development Team
+=============================================================================
+"""
+
 from fastapi import APIRouter
 
 from app.api.v1.endpoints import health, auth, quizzes, generate

@@ -1,5 +1,27 @@
 """
-API endpoints for generating quiz questions from PDF documents.
+=============================================================================
+AI Question Generation Endpoints Module
+=============================================================================
+This module provides API endpoints for generating quiz questions using AI
+from various content sources (PDF documents and plain text).
+
+Endpoints:
+- POST /from-pdf: Generate questions from uploaded PDF file
+- POST /from-text: Generate questions from plain text content
+
+Features:
+- Support for multiple difficulty levels (beginner, medium, advanced)
+- Configurable number of questions (1-20)
+- File validation and size limits (max 10MB)
+- Optional custom API key support
+
+Response Models:
+- GeneratedChoice: Single answer option
+- GeneratedQuestion: Question with choices
+- GenerateResponse: Full response with questions and status
+
+Author: Zedny Development Team
+=============================================================================
 """
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends, status
 from typing import List, Optional

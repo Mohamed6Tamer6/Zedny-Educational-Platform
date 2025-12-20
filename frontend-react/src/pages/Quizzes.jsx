@@ -1,3 +1,30 @@
+/**
+ * =============================================================================
+ * Quizzes List Page Component
+ * =============================================================================
+ * Displays all quizzes created by the authenticated user in a card grid.
+ * Supports quiz deletion and navigation to quiz details.
+ * 
+ * Features:
+ * - Fetch and display user's quizzes
+ * - Loading and error states
+ * - Empty state for new users
+ * - Delete quiz with confirmation
+ * - Navigate to quiz room on card click
+ * 
+ * API Endpoints Used:
+ * - GET /quizzes/: Fetch all user quizzes
+ * - DELETE /quizzes/{id}: Delete a quiz
+ * 
+ * Card Information:
+ * - Quiz title
+ * - Number of questions
+ * - Access code
+ * 
+ * Author: Zedny Development Team
+ * =============================================================================
+ */
+
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';

@@ -1,3 +1,27 @@
+"""
+=============================================================================
+Quiz Endpoints Module
+=============================================================================
+This module provides all quiz-related API endpoints for CRUD operations
+and AI-powered question generation.
+
+Endpoints:
+- POST /: Create a new quiz with questions and choices
+- GET /: List all quizzes for the authenticated user
+- GET /{quiz_id}: Get a specific quiz with all questions
+- DELETE /{quiz_id}: Delete a quiz (owner or admin only)
+- POST /generate-from-pdf: Generate questions from uploaded PDF using AI
+
+Features:
+- Automatic unique access code generation for each quiz
+- Comprehensive input validation with detailed error messages
+- Cascade delete for questions and choices
+- AI integration for automatic question generation
+
+Author: Zedny Development Team
+=============================================================================
+"""
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
