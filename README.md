@@ -25,6 +25,9 @@
 ### 🎯 Vision
 The platform aims to bridge the gap between traditional education and modern technology by providing interactive tools that make learning more enjoyable and effective.
 
+### 🏛️ Project Philosophy
+Designed with **Scalability**, **Security**, and **User Experience** as core pillars. The architecture follows modern best practices, using asynchronous patterns in the backend and a modular, component-based approach in the frontend to ensure a seamless and performant experience for thousands of concurrent users.
+
 ### ✨ Key Features
 
 | Feature | Description |
