@@ -29,7 +29,7 @@ from datetime import timedelta
 
 from app.db.session import get_db
 from app.models.user import User, UserRole as DBUserRole
-from app.schemas.user import UserRegister, UserLogin, Token, UserResponse, UserRole
+from app.schemas.user import UserRegister, UserLogin, Token, UserResponse, UserRole, UserUpdate
 from app.core.security import verify_password, get_password_hash, create_access_token
 from app.core.config import get_settings
 from app.api import deps
@@ -108,6 +108,81 @@ async def login(
 
 
 @router.get("/me", response_model=UserResponse)
-async def get_current_user_info(current_user: User = Depends(deps.get_current_active_user)):
-    """Get current authenticated user's information."""
+async def get_current_user_info(
+    current_user: User = Depends(deps.get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get current authenticated user's information and update streak.
+    """
+    from datetime import datetime, timezone
+    
+    today = datetime.now(timezone.utc).date()
+    streak_updated = False
+    
+    if not current_user.last_streak_date:
+        # First streak
+        current_user.streak_count = 1
+        current_user.last_streak_date = datetime.now(timezone.utc)
+        streak_updated = True
+    else:
+        last_date = current_user.last_streak_date.date()
+        diff = (today - last_date).days
+        
+        if diff == 1:
+            # Consecutive day
+            current_user.streak_count += 1
+            current_user.last_streak_date = datetime.now(timezone.utc)
+            streak_updated = True
+        elif diff > 1:
+            # Streak broken
+            current_user.streak_count = 1
+            current_user.last_streak_date = datetime.now(timezone.utc)
+            streak_updated = True
+        # if diff == 0, already updated today, do nothing
+    
+    if streak_updated:
+        db.add(current_user)
+        await db.commit()
+        await db.refresh(current_user)
+    
+    # Prepare response data explicitly to ensure runtime flags are included
+    user_data = {
+        "id": current_user.id,
+        "email": current_user.email,
+        "full_name": current_user.full_name,
+        "role": current_user.role,
+        "is_active": current_user.is_active,
+        "is_verified": current_user.is_verified,
+        "created_at": current_user.created_at,
+        "streak_count": current_user.streak_count,
+        "avatar_url": current_user.avatar_url,
+        "streak_updated": streak_updated
+    }
+    return user_data
+
+
+@router.post("/update-profile", response_model=UserResponse)
+async def update_profile(
+    user_data: UserUpdate,
+    current_user: User = Depends(deps.get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Update the current authenticated user's profile.
+    Supports updating full name and password.
+    """
+    if user_data.full_name is not None:
+        current_user.full_name = user_data.full_name
+        
+    if user_data.password is not None:
+        current_user.hashed_password = get_password_hash(user_data.password)
+        
+    if user_data.avatar_url is not None:
+        current_user.avatar_url = user_data.avatar_url
+        
+    db.add(current_user)
+    await db.commit()
+    await db.refresh(current_user)
+    
     return current_user

@@ -41,6 +41,7 @@ class Quiz(Base):
     description = Column(Text, nullable=True)
     access_code = Column(String(10), unique=True, index=True, nullable=False)
     is_public = Column(Boolean, default=False)
+    source_text = Column(Text, nullable=True) # Text used to generate the quiz (from PDF/Content)
     
     # Foreign Keys
     teacher_id = Column(Integer, ForeignKey("users.id"), nullable=False)
@@ -108,4 +109,17 @@ class QuizAttempt(Base):
     # Relationships
     quiz = relationship("Quiz", back_populates="attempts")
     user = relationship("User", backref="attempts")
+
+class QuizParticipation(Base):
+    """Model to track every time a student enters a quiz."""
+    __tablename__ = "quiz_participations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    quiz_id = Column(Integer, ForeignKey("quizzes.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    entered_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    quiz = relationship("Quiz", backref="participations")
+    user = relationship("User", backref="participations")
 

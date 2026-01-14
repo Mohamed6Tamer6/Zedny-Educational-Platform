@@ -40,6 +40,14 @@ import TeacherDashboard from './pages/TeacherDashboard';
 import StudentDashboard from './pages/StudentDashboard';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import MyPerformance from './pages/MyPerformance';
+import QuizResults from './pages/QuizResults';
+import CourseCatalog from './pages/CourseCatalog';
+import CourseDetail from './pages/CourseDetail';
+import LessonViewer from './pages/LessonViewer';
+import CourseBuilder from './pages/CourseBuilder';
+import TeacherCourses from './pages/TeacherCourses';
+import TeacherAIAssistant from './pages/TeacherAIAssistant';
+import Profile from './pages/Profile';
 import PrivateRoute from './components/PrivateRoute';
 
 function RoleRedirect() {
@@ -71,6 +79,7 @@ function App() {
                             <Route path="/edit-quiz/:id" element={<CreateQuiz />} />
                             <Route path="/quizzes" element={<Quizzes />} />
                             <Route path="/game/host/:quizId" element={<HostGame />} />
+                            <Route path="/quiz/:id/results" element={<QuizResults />} />
                         </Route>
 
                         <Route element={<PrivateRoute allowedRoles={['STUDENT', 'TEACHER', 'SUPER_ADMIN']} />}>
@@ -88,6 +97,19 @@ function App() {
                             <Route path="/quiz/:id" element={<Room />} />
                             {/* Legacy Dashboard route, now acts as redirector */}
                             <Route path="/dashboard" element={<RoleRedirect />} />
+                            {/* LMS Routes */}
+                            <Route path="/courses" element={<CourseCatalog />} />
+                            <Route path="/courses/:id" element={<CourseDetail />} />
+                            <Route path="/courses/:id/lessons/:lessonId" element={<LessonViewer />} />
+                            <Route path="/profile" element={<Profile />} />
+                        </Route>
+
+                        {/* LMS Teacher Routes */}
+                        <Route element={<PrivateRoute allowedRoles={['TEACHER', 'SUPER_ADMIN']} />}>
+                            <Route path="/create-course" element={<CourseBuilder />} />
+                            <Route path="/edit-course/:id" element={<CourseBuilder />} />
+                            <Route path="/teacher-courses" element={<TeacherCourses />} />
+                            <Route path="/teacher/ai-assistant" element={<TeacherAIAssistant />} />
                         </Route>
 
                         {/* Root Redirect */}

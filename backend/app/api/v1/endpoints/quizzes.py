@@ -32,9 +32,10 @@ import string
 
 from app.db.session import get_db
 from app.db.session import get_db
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, get_current_user_optional
 from app.models.user import User, UserRole
-from app.models.quiz import Quiz, Question, Choice, QuestionType, QuizAttempt
+from app.models.quiz import Quiz, Question, Choice, QuestionType, QuizAttempt, QuizParticipation
+from app.models.course import Course
 from app.schemas import quiz as schemas
 from app.services.pdf_service import extract_text_from_pdf
 from app.services.ai_service import generate_quiz_questions
@@ -196,7 +197,8 @@ async def create_quiz(
             description=quiz_in.description or "",
             is_public=quiz_in.is_public,
             access_code=access_code,
-            teacher_id=current_user.id
+            teacher_id=current_user.id,
+            source_text=quiz_in.source_text
         )
         db.add(db_quiz)
         await db.flush()  # Get the quiz ID
@@ -340,26 +342,34 @@ async def get_teacher_stats(
     quiz_query = select(func.count(Quiz.id)).where(Quiz.teacher_id == current_user.id)
     quiz_count = (await db.execute(quiz_query)).scalar() or 0
     
+    # 1.1 Total Courses
+    course_query = select(func.count(Course.id)).where(Course.teacher_id == current_user.id)
+    course_count = (await db.execute(course_query)).scalar() or 0
+    
     # 2. Total Unique Students who joined teacher's quizzes
     student_query = select(func.count(func.distinct(QuizAttempt.user_id))).join(Quiz).where(Quiz.teacher_id == current_user.id)
     student_count = (await db.execute(student_query)).scalar() or 0
+
+    # 3. Total Participations (Entries) for teacher's quizzes
+    participation_query = select(func.count(QuizParticipation.id)).join(Quiz).where(Quiz.teacher_id == current_user.id)
+    participation_count = (await db.execute(participation_query)).scalar() or 0
     
-    # 3. Average Completion Rate
-    avg_score_query = select(func.avg(QuizAttempt.score)).join(Quiz).where(Quiz.teacher_id == current_user.id)
-    avg_score = (await db.execute(avg_score_query)).scalar() or 0.0
-    
+    # 4. Average Completion Rate (Overall success rate across all student answers)
     comp_query = select(func.sum(QuizAttempt.correct_answers), func.sum(QuizAttempt.total_questions)).join(Quiz).where(Quiz.teacher_id == current_user.id)
     res = (await db.execute(comp_query)).first()
     comp_rate = (res[0] / res[1] * 100) if res and res[1] and res[1] > 0 else 0.0
 
-    # Get quiz details for the list
+    print(f"DEBUG TEACHER STATS: User={current_user.id}, Quizzes={quiz_count}, Courses={course_count}, Students={student_count}")
+
+    # 5. Get quiz details for the list
     quizzes_query = select(
         Quiz.id, 
         Quiz.title, 
         Quiz.access_code,
-        func.count(QuizAttempt.id).label('student_count'),
+        func.count(func.distinct(QuizAttempt.id)).label('student_count'),
+        func.count(func.distinct(QuizParticipation.id)).label('participation_count'),
         func.avg(QuizAttempt.score).label('avg_score')
-    ).outerjoin(QuizAttempt).where(Quiz.teacher_id == current_user.id).group_by(Quiz.id)
+    ).outerjoin(QuizAttempt).outerjoin(QuizParticipation).where(Quiz.teacher_id == current_user.id).group_by(Quiz.id)
     
     quiz_results = await db.execute(quizzes_query)
     quizzes_list = []
@@ -369,15 +379,49 @@ async def get_teacher_stats(
             "title": r.title,
             "access_code": r.access_code,
             "student_count": r.student_count,
+            "participation_count": r.participation_count,
             "avg_score": round(float(r.avg_score or 0), 1)
         })
 
     return {
         "total_quizzes": quiz_count,
+        "total_courses": course_count,
         "total_students": student_count,
+        "total_participations": participation_count,
         "avg_completion_rate": round(comp_rate, 1),
         "quizzes": quizzes_list
     }
+
+@router.get("/{quiz_id}/results", response_model=List[schemas.QuizResult])
+async def get_quiz_results(
+    quiz_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get all results for a specific quiz (Owner only)."""
+    # Verify ownership
+    quiz = await db.get(Quiz, quiz_id)
+    if not quiz:
+        raise HTTPException(status_code=404, detail="Quiz not found")
+    if quiz.teacher_id != current_user.id and current_user.role not in [UserRole.ADMIN, UserRole.SUPER_ADMIN]:
+        raise HTTPException(status_code=403, detail="Not authorized to view results for this quiz")
+    
+    query = select(QuizAttempt).where(QuizAttempt.quiz_id == quiz_id).options(joinedload(QuizAttempt.user)).order_by(QuizAttempt.completed_at.desc())
+    results = (await db.execute(query)).scalars().all()
+    
+    return [
+        {
+            "id": r.id,
+            "user_id": r.user_id,
+            "user_name": r.user.full_name or r.user.email.split('@')[0],
+            "score": r.score,
+            "total_questions": r.total_questions,
+            "correct_answers": r.correct_answers,
+            "rank": r.rank,
+            "completed_at": r.completed_at
+        }
+        for r in results
+    ]
 
 @router.get("/", response_model=List[schemas.Quiz])
 async def list_quizzes(
@@ -517,6 +561,37 @@ async def get_quiz_by_code(
     
     return quiz
 
+@router.post("/{quiz_id}/join", status_code=status.HTTP_200_OK)
+async def join_quiz_participation(
+    quiz_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Record student participation when joining a quiz."""
+    # Check if quiz exists
+    quiz = await db.get(Quiz, quiz_id)
+    if not quiz:
+        raise HTTPException(status_code=404, detail="Quiz not found")
+        
+    # Record participation only if not already recorded for this quiz/user
+    existing_participation = await db.execute(
+        select(QuizParticipation).where(
+            and_(QuizParticipation.quiz_id == quiz_id, QuizParticipation.user_id == current_user.id)
+        )
+    )
+    if not existing_participation.scalar_one_or_none():
+        participation = QuizParticipation(
+            quiz_id=quiz_id,
+            user_id=current_user.id
+        )
+        db.add(participation)
+        await db.commit()
+        print(f"DEBUG: Recorded new participation for user {current_user.id} in quiz {quiz_id}")
+    else:
+        print(f"DEBUG: Participation already exists for user {current_user.id} in quiz {quiz_id}")
+    
+    return {"message": "Participation recorded"}
+
 @router.post("/{quiz_id}/attempts", response_model=schemas.QuizAttempt)
 async def create_quiz_attempt(
     quiz_id: int,
@@ -537,6 +612,84 @@ async def create_quiz_attempt(
     await db.commit()
     await db.refresh(db_attempt)
     print(f"DEBUG: Saved QuizAttempt {db_attempt.id} for user {current_user.id}. Score: {db_attempt.score}")
+    
+    # --- AUTO-COMPLETE LINKED LESSONS ---
+    try:
+        from app.models.course import Lesson, Enrollment, LessonProgress, Course, LessonStatus, EnrollmentStatus
+        
+        # 1. Get Quiz Access Code
+        quiz = await db.get(Quiz, quiz_id)
+        if quiz:
+            # 2. Find all lessons linked to this quiz (by ID or Code)
+            linked_lessons_query = select(Lesson).where(
+                (Lesson.linked_quiz_id == quiz_id) | 
+                (Lesson.quiz_code == quiz.access_code)
+            )
+            linked_lessons = (await db.execute(linked_lessons_query)).scalars().all()
+            
+            for lesson in linked_lessons:
+                # 3. Find Enrollment for this user in the lesson's course
+                enrollment_query = select(Enrollment).where(
+                    and_(Enrollment.user_id == current_user.id, Enrollment.course_id == lesson.course_id)
+                )
+                enrollment = (await db.execute(enrollment_query)).scalar_one_or_none()
+                
+                if enrollment:
+                    # 4. Find or Create LessonProgress
+                    lp_query = select(LessonProgress).where(
+                        and_(LessonProgress.enrollment_id == enrollment.id, LessonProgress.lesson_id == lesson.id)
+                    )
+                    lp = (await db.execute(lp_query)).scalar_one_or_none()
+                    
+                    if not lp:
+                        lp = LessonProgress(
+                            enrollment_id=enrollment.id,
+                            lesson_id=lesson.id,
+                            status=LessonStatus.COMPLETED,
+                            started_at=func.now(),
+                            completed_at=func.now()
+                        )
+                        db.add(lp)
+                    else:
+                        lp.status = LessonStatus.COMPLETED
+                        if not lp.completed_at:
+                            lp.completed_at = func.now()
+                    
+                    # 5. Update Course Progress Percent
+                    # Count total lessons
+                    total_lessons_query = select(func.count(Lesson.id)).where(Lesson.course_id == lesson.course_id)
+                    total_lessons = (await db.execute(total_lessons_query)).scalar() or 1
+                    
+                    # Count completed lessons (including this one, which is now in session)
+                    # We need to flush to ensure the new LP is counted if we query DB, 
+                    # OR just query existing + 1? Safest is to query DB after flush or calc manually.
+                    # Let's flush the LP update first.
+                    await db.flush()
+                    
+                    completed_count_query = select(func.count(LessonProgress.id)).join(Enrollment).where(
+                        and_(
+                            Enrollment.id == enrollment.id,
+                            LessonProgress.status == LessonStatus.COMPLETED
+                        )
+                    )
+                    completed_count = (await db.execute(completed_count_query)).scalar() or 0
+                    
+                    progress = (completed_count / total_lessons) * 100.0
+                    enrollment.progress_percent = min(progress, 100.0)
+                    
+                    if progress >= 100:
+                        enrollment.status = EnrollmentStatus.COMPLETED
+                        enrollment.completed_at = func.now()
+                        
+                    db.add(enrollment)
+            
+            await db.commit()
+            print(f"DEBUG: Auto-completed {len(linked_lessons)} lessons for user {current_user.id}")
+            
+    except Exception as e:
+        print(f"ERROR: Failed to auto-complete linked lessons: {e}")
+        # Don't fail the request, just log it
+    
     return db_attempt
 
     # Removed get_teacher_stats from here (moved to top)

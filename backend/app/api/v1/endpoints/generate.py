@@ -48,6 +48,7 @@ class GenerateResponse(BaseModel):
     success: bool
     questions: List[GeneratedQuestion]
     message: str
+    extracted_text: Optional[str] = None # Return the text extracted from PDF or Source
 
 
 @router.post("/from-pdf", response_model=GenerateResponse)
@@ -119,7 +120,8 @@ async def generate_questions_from_pdf(
         return GenerateResponse(
             success=True,
             questions=questions,
-            message=f"Successfully generated {len(questions)} questions"
+            message=f"Successfully generated {len(questions)} questions",
+            extracted_text=content
         )
         
     except ValueError as e:
@@ -176,7 +178,8 @@ async def generate_questions_from_text(
         return GenerateResponse(
             success=True,
             questions=questions,
-            message=f"Successfully generated {len(questions)} questions"
+            message=f"Successfully generated {len(questions)} questions",
+            extracted_text=content
         )
         
     except ValueError as e:

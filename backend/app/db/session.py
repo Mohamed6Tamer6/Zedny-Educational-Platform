@@ -27,11 +27,16 @@ from app.core.config import get_settings
 
 settings = get_settings()
 
-# Create async engine
+# Create async engine with optimized connection pooling
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG,  # Log SQL queries in debug mode
-    future=True
+    future=True,
+    pool_size=20,           # Maximum number of connections in the pool
+    max_overflow=10,        # Extra connections when pool is exhausted
+    pool_pre_ping=True,     # Verify connection health before using
+    pool_recycle=3600,      # Recycle connections after 1 hour
+    pool_timeout=30,        # Timeout for getting connection from pool
 )
 
 # Create async session factory

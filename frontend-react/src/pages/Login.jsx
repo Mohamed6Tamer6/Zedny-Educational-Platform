@@ -48,12 +48,31 @@ export default function Login() {
     const [lastName, setLastName] = useState('');
     const [role, setRole] = useState('STUDENT');
 
-    // Password Visibility Toggle
     const [showPassword, setShowPassword] = useState(false);
+    const [isSocialModalOpen, setIsSocialModalOpen] = useState(false);
+    const [socialProvider, setSocialProvider] = useState('');
 
     const navigate = useNavigate();
     const { login } = useAuth();
     const { showNotification } = useNotification();
+
+    const handleSocialAuth = (provider) => {
+        setSocialProvider(provider);
+        setIsSocialModalOpen(true);
+    };
+
+    const selectSocialAccount = (selectedEmail) => {
+        setIsSocialModalOpen(false);
+        setIsLogin(false); // Switch to Sign Up mode
+        setEmail(selectedEmail);
+        showNotification(`Connected with ${socialProvider} (${selectedEmail}). Now set your account password.`, 'success');
+
+        // Auto-focus password field after a short delay
+        setTimeout(() => {
+            const pwdInput = document.querySelector('input[type="password"]');
+            if (pwdInput) pwdInput.focus();
+        }, 500);
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -293,8 +312,14 @@ export default function Login() {
                 </div>
 
                 <div className="social-buttons">
-                    <button type="button" className="btn-social">G</button>
-                    <button type="button" className="btn-social">F</button>
+                    <button type="button" className="btn-social google" onClick={() => handleSocialAuth('Google')}>
+                        <span className="social-icon">G</span>
+                        <span className="social-text">Continue with Google</span>
+                    </button>
+                    <button type="button" className="btn-social facebook" onClick={() => handleSocialAuth('Facebook')}>
+                        <span className="social-icon">F</span>
+                        <span className="social-text">Continue with Facebook</span>
+                    </button>
                 </div>
 
                 <div className="auth-footer" style={{ marginTop: '20px' }}>
@@ -307,6 +332,140 @@ export default function Login() {
                     </span>
                 </div>
             </div>
+            {/* Social OAuth Simulation Modal */}
+            {isSocialModalOpen && (
+                <div className="modal-overlay">
+                    <div className="social-modal glassmorphism animate-in">
+                        <div className="modal-header">
+                            <div className="provider-logo">{socialProvider[0]}</div>
+                            <h3>Sign in with {socialProvider}</h3>
+                            <p>Choose an account to continue to <strong>Zedny</strong></p>
+                        </div>
+                        <div className="account-list">
+                            {[
+                                { name: 'Mohamed Ali', email: 'mohamed.ali@gmail.com' },
+                                { name: 'Guest Student', email: 'student.zedny@outlook.com' },
+                                { name: 'Demo Teacher', email: 'teacher.demo@gmail.com' }
+                            ].map((acc, i) => (
+                                <div key={i} className="account-item" onClick={() => selectSocialAccount(acc.email)}>
+                                    <div className="acc-avatar">{acc.name[0]}</div>
+                                    <div className="acc-info">
+                                        <span className="acc-name">{acc.name}</span>
+                                        <span className="acc-email">{acc.email}</span>
+                                    </div>
+                                </div>
+                            ))}
+                            <div className="account-item use-another" onClick={() => setIsSocialModalOpen(false)}>
+                                <div className="acc-avatar">+</div>
+                                <div className="acc-info">
+                                    <span className="acc-name">Use another account</span>
+                                </div>
+                            </div>
+                        </div>
+                        <p className="modal-footer-text">
+                            To continue, {socialProvider} will share your name, email address, and profile picture with Zedny.
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            <style jsx>{`
+                .modal-overlay {
+                    position: fixed;
+                    inset: 0;
+                    background: rgba(0,0,0,0.85);
+                    backdrop-filter: blur(10px);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 2000;
+                }
+                .social-modal {
+                    width: 100%;
+                    max-width: 400px;
+                    padding: 32px;
+                    border-radius: 24px;
+                    text-align: center;
+                    border: 1px solid rgba(255,255,255,0.1);
+                }
+                .animate-in {
+                    animation: modalPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                }
+                @keyframes modalPop {
+                    from { opacity: 0; transform: scale(0.9) translateY(20px); }
+                    to { opacity: 1; transform: scale(1) translateY(0); }
+                }
+                .provider-logo {
+                    width: 48px;
+                    height: 48px;
+                    background: #fff;
+                    color: #000;
+                    border-radius: 12px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 1.5rem;
+                    font-weight: 900;
+                    margin: 0 auto 16px;
+                }
+                .account-list {
+                    margin: 24px 0;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                }
+                .account-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    padding: 12px;
+                    background: rgba(255,255,255,0.03);
+                    border: 1px solid rgba(255,255,255,0.05);
+                    border-radius: 12px;
+                    cursor: pointer;
+                    text-align: left;
+                    transition: 0.2s;
+                }
+                .account-item:hover {
+                    background: rgba(255,255,255,0.08);
+                    border-color: rgba(255,255,255,0.2);
+                    transform: translateX(4px);
+                }
+                .acc-avatar {
+                    width: 36px;
+                    height: 36px;
+                    background: #818cf8;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: 700;
+                }
+                .acc-name { display: block; font-size: 0.9rem; font-weight: 600; }
+                .acc-email { display: block; font-size: 0.75rem; opacity: 0.5; }
+                .modal-footer-text { font-size: 0.7rem; opacity: 0.4; line-height: 1.4; }
+                
+                .social-buttons { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+                .btn-social {
+                    display: flex;
+                    align-items: center;
+                    gap: 16px;
+                    padding: 12px 20px;
+                    border-radius: 12px;
+                    border: 1px solid rgba(255,255,255,0.1);
+                    background: rgba(255,255,255,0.05);
+                    color: #fff;
+                    cursor: pointer;
+                    font-weight: 600;
+                    transition: 0.3s;
+                }
+                .btn-social:hover {
+                    background: rgba(255,255,255,0.1);
+                    border-color: rgba(255,255,255,0.3);
+                    transform: translateY(-2px);
+                }
+                .social-icon { font-weight: 900; font-size: 1.2rem; width: 20px; }
+            `}</style>
         </div>
     );
 }

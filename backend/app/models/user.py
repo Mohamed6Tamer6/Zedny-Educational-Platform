@@ -58,5 +58,10 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
+    # Engagement Tracking
+    streak_count = Column(Integer, default=0)
+    last_streak_date = Column(DateTime(timezone=True), nullable=True)
+    avatar_url = Column(String(500), nullable=True)
+    
     def __repr__(self):
         return f"<User {self.email}>"

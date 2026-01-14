@@ -21,3 +21,17 @@ __pycache__/
 .coverage
 htmlcov/
 kill_and_run.ps1
+
+# Test files (moved to tests/)
+tests/__pycache__/
+
+# Documentation (moved to docs/)
+# docs/
+
+# Scripts (moved to scripts/)
+scripts/__pycache__/
+
+# Uploads
+uploads/*
+!uploads/.gitkeep
+!uploads/.gitignore

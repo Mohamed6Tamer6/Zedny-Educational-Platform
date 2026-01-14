@@ -64,6 +64,7 @@ export default function CreateQuiz() {
 
     // State
     const [quizTitle, setQuizTitle] = useState('');
+    const [sourceText, setSourceText] = useState(''); // Text context for AI explanations
     const [questions, setQuestions] = useState([JSON.parse(JSON.stringify(DEFAULT_QUESTION))]);
     const [currentQIndex, setCurrentQIndex] = useState(0);
 
@@ -233,6 +234,7 @@ export default function CreateQuiz() {
                 title: quizTitle.trim(),
                 description: "Created via Web UI",
                 is_public: true,
+                source_text: sourceText,
                 questions: questions.map((q, qIndex) => {
                     const nonEmptyAnswers = q.answers.filter(a => a.text && a.text.trim());
 
@@ -289,7 +291,22 @@ export default function CreateQuiz() {
             }
 
             showNotification(editId ? 'Quiz updated successfully!' : 'Quiz saved successfully!', 'success');
-            navigate(`/teacher-dashboard`);
+
+            // Check for popup mode (from CourseBuilder)
+            const urlParams = new URLSearchParams(window.location.search);
+            const isPopup = urlParams.get('popup') === 'true';
+            const lessonIndex = urlParams.get('lessonIndex');
+
+            if (isPopup && window.opener) {
+                window.opener.postMessage({
+                    type: 'QUIZ_CREATED',
+                    code: responseData.access_code,
+                    lessonIndex: lessonIndex
+                }, window.location.origin);
+                window.close();
+            } else {
+                navigate(`/teacher-dashboard`);
+            }
 
         } catch (error) {
             console.error('Error saving quiz:', error);
@@ -356,6 +373,9 @@ export default function CreateQuiz() {
             }));
 
             setQuestions(prev => [...prev, ...newQuestions]);
+            if (data.extracted_text) {
+                setSourceText(data.extracted_text);
+            }
             setIsAIModalOpen(false);
             setAiStatus('success');
             showNotification(`Generated ${newQuestions.length} questions!`, 'success');
@@ -458,7 +478,7 @@ export default function CreateQuiz() {
                             {currentQ.answers.map((ans, idx) => (
                                 <div key={idx} className={`answer-card ${ans.color}`} onClick={() => openAnswerModal(idx)}>
                                     <div className="shape">
-                                        <i className={`fas ${SHAPES[idx]}`}></i>
+                                        {String.fromCharCode(65 + idx)}
                                     </div>
                                     <div className={`answer-content-btn ${ans.text ? 'has-value' : ''}`}>
                                         <span>{ans.text || 'Add Answer'}</span>
@@ -492,27 +512,63 @@ export default function CreateQuiz() {
                         <label><i className="fas fa-clock"></i> Time limit</label>
                         <select
                             className="setting-select"
-                            value={currentQ.timeLimit}
-                            onChange={(e) => updateQuestionField('timeLimit', e.target.value)}
+                            value={[10, 20, 30, 60].includes(Number(currentQ.timeLimit)) && !currentQ._customTimeActive ? currentQ.timeLimit : 'custom'}
+                            onChange={(e) => {
+                                if (e.target.value === 'custom') {
+                                    updateQuestionField('_customTimeActive', true);
+                                } else {
+                                    updateQuestionField('_customTimeActive', false);
+                                    updateQuestionField('timeLimit', e.target.value);
+                                }
+                            }}
                         >
                             <option value="10">10 seconds</option>
                             <option value="20">20 seconds</option>
                             <option value="30">30 seconds</option>
                             <option value="60">60 seconds</option>
+                            <option value="custom">Custom...</option>
                         </select>
+                        {(currentQ._customTimeActive || ![10, 20, 30, 60].includes(Number(currentQ.timeLimit))) && (
+                            <input
+                                type="number"
+                                className="setting-select"
+                                style={{ marginTop: '10px' }}
+                                placeholder="Enter seconds"
+                                value={currentQ.timeLimit}
+                                onChange={(e) => updateQuestionField('timeLimit', e.target.value)}
+                            />
+                        )}
                     </div>
 
                     <div className="setting-group">
                         <label><i className="fas fa-star"></i> Points</label>
                         <select
                             className="setting-select"
-                            value={currentQ.points}
-                            onChange={(e) => updateQuestionField('points', e.target.value)}
+                            value={[0, 10, 20].includes(Number(currentQ.points)) && !currentQ._customPointsActive ? currentQ.points : 'custom'}
+                            onChange={(e) => {
+                                if (e.target.value === 'custom') {
+                                    updateQuestionField('_customPointsActive', true);
+                                } else {
+                                    updateQuestionField('_customPointsActive', false);
+                                    updateQuestionField('points', e.target.value);
+                                }
+                            }}
                         >
                             <option value="0">No points</option>
                             <option value="10">Standard (10 pt)</option>
                             <option value="20">Double (20 pt)</option>
+                            <option value="custom">Custom...</option>
                         </select>
+                        {(currentQ._customPointsActive || ![0, 10, 20].includes(Number(currentQ.points))) && (
+                            <input
+                                type="number"
+                                className="setting-select"
+                                style={{ marginTop: '10px' }}
+                                placeholder="Enter points"
+                                value={currentQ.points}
+                                onChange={(e) => updateQuestionField('points', e.target.value)}
+                            />
+                        )}
                     </div>
 
                     <div className="setting-group">
@@ -588,11 +644,18 @@ export default function CreateQuiz() {
 
                         <div className="setting-group">
                             <label>Number of Questions</label>
-                            <select className="setting-select" value={aiNumQuestions} onChange={e => setAiNumQuestions(e.target.value)}>
-                                <option value="3">3</option>
-                                <option value="5">5</option>
-                                <option value="10">10</option>
-                            </select>
+                            <div className="custom-input-group">
+                                <input
+                                    type="number"
+                                    className="setting-select"
+                                    min="1"
+                                    max="50"
+                                    value={aiNumQuestions}
+                                    onChange={e => setAiNumQuestions(e.target.value)}
+                                    placeholder="Enter amount (e.g. 15)"
+                                />
+                                <span className="input-hint">Max 50 recommended</span>
+                            </div>
                         </div>
 
                         <div className="setting-group">

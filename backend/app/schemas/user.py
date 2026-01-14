@@ -73,6 +73,7 @@ class UserBase(BaseModel):
     email: EmailStr
     full_name: Optional[str] = None
     role: UserRole
+    avatar_url: Optional[str] = None
 
 
 class UserResponse(UserBase):
@@ -81,6 +82,9 @@ class UserResponse(UserBase):
     is_active: bool
     is_verified: bool
     created_at: datetime
+    streak_count: int = 0
+    streak_updated: bool = False # Runtime flag
+    avatar_url: Optional[str] = None
 
     class Config:
         from_attributes = True  # Pydantic v2 (was orm_mode in v1)
@@ -90,3 +94,4 @@ class UserUpdate(BaseModel):
     """Schema for updating user profile."""
     full_name: Optional[str] = Field(None, max_length=100)
     password: Optional[str] = Field(None, min_length=8)
+    avatar_url: Optional[str] = None

@@ -31,8 +31,10 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { Bot, Sparkles, BookOpen } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
+import AIExplanationModal from '../components/AIExplanationModal';
 import '../styles/Game.css';
 
 const API_URL = '/api/v1';
@@ -58,11 +60,15 @@ export default function PlayerGame() {
     const [feedback, setFeedback] = useState(null); // { isCorrect, correctText, points }
     const [selectedChoice, setSelectedChoice] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [userAnswers, setUserAnswers] = useState([]); // Track user choices for review
+    const [isExplaining, setIsExplaining] = useState(false);
+    const [explanationData, setExplanationData] = useState(null);
 
     // Refs for stable results regardless of React render cycles
     const scoreRef = useRef(0);
     const correctCountRef = useRef(0);
     const intervalRef = useRef(null);
+    const autoAdvanceRef = useRef(null);
     const location = useLocation();
 
     // Auto-join if code in URL
@@ -78,19 +84,39 @@ export default function PlayerGame() {
         }
     }, [location.search, user]);
 
+    const [isJoining, setIsJoining] = useState(false);
+
+    const recordParticipation = async (quizId) => {
+        if (!token) return;
+        try {
+            console.log(`DEBUG: Recording participation for quiz ${quizId}`);
+            await fetch(`${API_URL}/quizzes/${quizId}/join`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+        } catch (err) {
+            console.error("DEBUG: Failed to record participation", err);
+        }
+    };
+
     const autoJoin = async (code, name) => {
         try {
+            console.log(`DEBUG: Auto-joining code ${code} for ${name}`);
             const res = await fetch(`${API_URL}/quizzes/by-code/${code}`, {
                 headers: token ? { Authorization: `Bearer ${token}` } : {}
             });
             if (res.ok) {
                 const quiz = await res.json();
+                console.log("DEBUG: Quiz data received", quiz);
                 setQuizData(quiz);
                 setStep('waiting');
-                setTimeout(() => startGame(quiz), 1500);
+                recordParticipation(quiz.id); // Background call
+                setTimeout(() => startGame(quiz), 800);
+            } else {
+                console.error("DEBUG: Room not found", res.status);
             }
         } catch (err) {
-            console.error(err);
+            console.error("DEBUG: Auto-join error", err);
         }
     };
 
@@ -106,23 +132,30 @@ export default function PlayerGame() {
         }
 
         try {
+            setIsJoining(true);
+            console.log(`DEBUG: Joining code ${roomCode} manually`);
             const res = await fetch(`${API_URL}/quizzes/by-code/${roomCode}`, {
                 headers: token ? { Authorization: `Bearer ${token}` } : {}
             });
 
             if (res.ok) {
                 const foundQuiz = await res.json();
+                console.log("DEBUG: Found quiz", foundQuiz);
                 setQuizData(foundQuiz);
                 setStep('waiting');
+                recordParticipation(foundQuiz.id);
+                // Transitions to playing state after a short brief
                 setTimeout(() => {
                     startGame(foundQuiz);
-                }, 2000);
+                }, 800);
             } else {
-                showNotification("Room not found or invalid", "error");
+                showNotification("Room not found or invalid code", "error");
             }
         } catch (err) {
-            console.error(err);
-            showNotification("Error joining", "error");
+            console.error("DEBUG: Handle join error", err);
+            showNotification("Error joining room", "error");
+        } finally {
+            setIsJoining(false);
         }
     };
 
@@ -138,8 +171,52 @@ export default function PlayerGame() {
         setWrongCount(0);
         scoreRef.current = 0;
         correctCountRef.current = 0;
+        setUserAnswers([]);
         loadQuestion(0, quiz);
     };
+
+    // Timer Sound Logic
+    const playBeep = () => {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.1);
+        } catch (e) {
+            console.warn("Audio context not supported", e);
+        }
+    };
+
+    // Timer Effect (Correct pattern for React)
+    useEffect(() => {
+        if (step !== 'playing' || feedback || !quizData) return;
+
+        if (timer <= 0) {
+            handleTimeout();
+            return;
+        }
+
+        const interval = setInterval(() => {
+            setTimer(prev => {
+                if (prev <= 6 && prev > 1) {
+                    playBeep();
+                }
+                return (prev > 0 ? prev - 1 : 0);
+            });
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [step, timer, feedback, quizData]);
 
     const loadQuestion = (index, quiz) => {
         if (!quiz || !quiz.questions[index]) return;
@@ -147,74 +224,65 @@ export default function PlayerGame() {
         setTimer(q.time_limit || 20);
         setFeedback(null);
         setSelectedChoice(null);
-
-        // Start Timer
-        if (intervalRef.current) clearInterval(intervalRef.current);
-        intervalRef.current = setInterval(() => {
-            setTimer(prev => {
-                if (prev <= 1) {
-                    clearInterval(intervalRef.current);
-                    handleTimeout();
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
     };
 
     const handleTimeout = () => {
-        // Automatically submit the quiz with current saved answers
-        if (selectedChoice !== null) {
-            const q = quizData.questions[currentQIndex];
-            const choice = q.choices[selectedChoice];
-            if (choice?.is_correct) {
-                const pts = q.points || 10;
-                setScore(prev => prev + pts);
-                setCorrectCount(prev => prev + 1);
-                scoreRef.current += pts;
-                correctCountRef.current += 1;
-            } else {
-                setWrongCount(prev => prev + 1);
-            }
-        } else {
-            setWrongCount(prev => prev + 1);
-        }
-
-        // Timer expiry forces quiz completion
-        finishGame();
+        // Automatically submit the current state (selected or not)
+        commitAnswer();
     };
 
     const handleChoiceClick = (idx) => {
         if (feedback) return;
         setSelectedChoice(idx);
+        // User wants immediate feedback, so we commit the answer right away
+        // Use a timeout to ensure state is updated or just pass the idx directly
+        setTimeout(() => commitAnswer(idx), 50);
     };
 
-    const commitAnswer = () => {
-        if (selectedChoice === null) return;
+    const commitAnswer = (choiceIdx = null) => {
+        // If timer is still running, stop it
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        if (feedback) return; // Prevent double submission
 
+        const actualChoiceIdx = choiceIdx !== null ? choiceIdx : selectedChoice;
         const q = quizData.questions[currentQIndex];
-        const choice = q.choices[selectedChoice];
+        const choice = actualChoiceIdx !== null ? q.choices[actualChoiceIdx] : null;
         const isCorrect = choice?.is_correct || false;
 
+        // Store user answer for review
+        setUserAnswers(prev => {
+            const newAnswers = [...prev];
+            newAnswers[currentQIndex] = actualChoiceIdx;
+            return newAnswers;
+        });
+
+        let pointsAwarded = 0;
         if (isCorrect) {
-            const pts = q.points || 10;
-            setScore(prev => prev + pts);
+            pointsAwarded = q.points || 10;
+            setScore(prev => prev + pointsAwarded);
             setCorrectCount(prev => prev + 1);
-            scoreRef.current += pts;
+            scoreRef.current += pointsAwarded;
             correctCountRef.current += 1;
-            setFeedback({ isCorrect: true, points: pts });
+            setFeedback({ isCorrect: true, points: pointsAwarded });
         } else {
             setWrongCount(prev => prev + 1);
             setFeedback({
                 isCorrect: false,
-                correctText: q.choices.find(c => c.is_correct)?.text || "Unknown"
+                correctText: q.choices.find(c => c.is_correct)?.text || "Unknown",
+                wasTimeout: actualChoiceIdx === null
             });
         }
 
-        if (intervalRef.current) clearInterval(intervalRef.current);
+        // Auto-advance after 2 seconds
+        if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
+        autoAdvanceRef.current = setTimeout(() => {
+            nextQuestion();
+        }, 2000);
     };
 
     const nextQuestion = () => {
+        if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
+
         if (quizData && currentQIndex < quizData.questions.length - 1) {
             const nextIdx = currentQIndex + 1;
             setCurrentQIndex(nextIdx);
@@ -225,6 +293,7 @@ export default function PlayerGame() {
     };
 
     const finishGame = async () => {
+        if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
         setStep('results');
         if (intervalRef.current) clearInterval(intervalRef.current);
 
@@ -281,6 +350,11 @@ export default function PlayerGame() {
     };
 
     const resetGame = () => {
+        if (quizData) {
+            // Direct restart
+            startGame(quizData);
+            return;
+        }
         setStep('join');
         setQuizData(null);
         setScore(0);
@@ -290,6 +364,11 @@ export default function PlayerGame() {
         correctCountRef.current = 0;
         setFeedback(null);
         setSelectedChoice(null);
+        setUserAnswers([]);
+    };
+
+    const startReview = () => {
+        setStep('review');
     };
 
     const handleExit = () => {
@@ -364,8 +443,13 @@ export default function PlayerGame() {
                                 value={playerName}
                                 onChange={e => setPlayerName(e.target.value)}
                             />
-                            <button className="btn btn-primary" style={{ width: '100%', padding: 15, fontSize: '1.1rem' }} onClick={handleJoin}>
-                                Join
+                            <button
+                                className="btn btn-primary"
+                                style={{ width: '100%' }}
+                                onClick={handleJoin}
+                                disabled={isJoining}
+                            >
+                                {isJoining ? 'Joining...' : 'Join Room'}
                             </button>
                         </div>
                     </div>
@@ -384,29 +468,43 @@ export default function PlayerGame() {
             {step === 'playing' && quizData && (
                 <div className="game-content">
                     <div className="game-header">
-                        <div className="game-progress">Q {currentQIndex + 1} / {quizData.questions.length}</div>
-                        <div className="timer-circle">{timer}</div>
-                        <div className="game-score">Score: <strong>{score}</strong></div>
+                        <div className="game-progress">
+                            <span className="current">Q{currentQIndex + 1}</span>
+                            <span className="total">/ {quizData.questions.length}</span>
+                        </div>
+                        <div className={`timer-circle ${timer <= 5 ? 'warning' : ''}`}>
+                            <svg className="timer-svg" viewBox="0 0 60 60">
+                                <circle r="28" cx="30" cy="30"></circle>
+                                <circle r="28" cx="30" cy="30" style={{
+                                    strokeDashoffset: 176 - (176 * timer) / (quizData.questions[currentQIndex].time_limit || 20)
+                                }}></circle>
+                            </svg>
+                            <span className="timer-text">{timer}</span>
+                        </div>
+                        <div className="game-score">
+                            <span className="score-label">Points</span>
+                            <span className="score-value">{score}</span>
+                        </div>
                     </div>
 
                     <div className="game-main">
                         <div className="question-display">
+                            <div className="question-badge">{currentQIndex + 1}</div>
                             <h1 className="question-text">{quizData.questions[currentQIndex].text}</h1>
                             <div className="question-meta">
-                                <span>Question {currentQIndex + 1} of {quizData.questions.length}</span>
-                                <span>{quizData.questions[currentQIndex].points || 10} points</span>
+                                <span>{quizData.questions[currentQIndex].points || 10} POINTS</span>
                             </div>
                         </div>
 
                         <div className="answers-grid">
-                            {quizData.questions[currentQIndex].choices.map((c, idx) => (
+                            {quizData?.questions?.[currentQIndex]?.choices?.map((c, idx) => (
                                 <div
                                     key={idx}
                                     className={`answer-card ${COLORS[idx % 4]} ${selectedChoice === idx ? 'selected' : ''}`}
                                     onClick={() => handleChoiceClick(idx)}
                                     style={{ transform: 'none' }}
                                 >
-                                    <div className="shape"><i className={`fas ${SHAPES[idx % 4]}`}></i></div>
+                                    <div className="shape">{String.fromCharCode(65 + idx)}</div>
                                     <span>{c.text}</span>
                                 </div>
                             ))}
@@ -417,7 +515,6 @@ export default function PlayerGame() {
                             {selectedChoice !== null && !feedback && (
                                 <button
                                     className="btn btn-primary next-question-btn"
-                                    style={{ padding: '15px 60px', fontSize: '1.2rem', minWidth: '250px' }}
                                     onClick={commitAnswer}
                                 >
                                     {currentQIndex < quizData.questions.length - 1 ? 'Next Question' : 'Finish Quiz'}
@@ -431,9 +528,15 @@ export default function PlayerGame() {
                         <div className={`answer-feedback ${feedback.isCorrect ? 'correct' : 'wrong'}`}>
                             <div className="feedback-content">
                                 <i className={`feedback-icon fas ${feedback.isCorrect ? 'fa-check-circle' : 'fa-times-circle'}`}></i>
-                                <h2>{feedback.isCorrect ? 'Correct!' : 'Wrong!'}</h2>
-                                <p>{feedback.isCorrect ? `+${feedback.points} Points` : `Correct answer: ${feedback.correctText}`}</p>
-                                <button className="btn btn-primary" style={{ padding: '15px 30px', fontSize: '1.2rem', minWidth: '200px' }} onClick={nextQuestion}>
+                                <h2>{feedback.wasTimeout ? "Time's Up!" : (feedback.isCorrect ? 'Correct!' : 'Wrong!')}</h2>
+                                <p>
+                                    {feedback.isCorrect
+                                        ? `+${feedback.points} Points`
+                                        : (feedback.wasTimeout
+                                            ? `The correct answer was: ${feedback.correctText}`
+                                            : `Correct answer: ${feedback.correctText}`)}
+                                </p>
+                                <button className="btn btn-primary" onClick={nextQuestion}>
                                     {currentQIndex < quizData.questions.length - 1 ? 'Next Question' : 'Finish Game'}
                                 </button>
                             </div>
@@ -455,7 +558,7 @@ export default function PlayerGame() {
                             </div>
                             <div className="result-stat">
                                 <span className="stat-label">Wrong</span>
-                                <span className="stat-value wrong">{quizData.questions.length - correctCountRef.current}</span>
+                                <span className="stat-value wrong">{(quizData?.questions?.length || 0) - correctCountRef.current}</span>
                             </div>
                             <div className="result-stat">
                                 <span className="stat-label">Score</span>
@@ -466,13 +569,88 @@ export default function PlayerGame() {
                         </div>
 
                         <div className="results-actions">
-                            <button className="btn btn-primary" onClick={resetGame}>Play Again</button>
-                            <button className="btn btn-secondary" onClick={handleExit} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>Exit Quiz</button>
+                            <button className="btn" onClick={resetGame} style={{ background: '#fff', color: '#000' }}>Play Again</button>
+                            <button className="btn btn-primary" onClick={startReview}>Next (Review)</button>
+                            <button className="btn btn-secondary" onClick={handleExit}>Exit</button>
                         </div>
                     </div>
                 </div>
             )}
+
+            {step === 'review' && quizData && (
+                <div className="review-container">
+                    <div className="review-header">
+                        <h1>Quiz Review</h1>
+                        <div className="review-summary">
+                            <span>Score: {score}</span>
+                            <span>Correct: {correctCount} / {quizData.questions.length}</span>
+                        </div>
+                    </div>
+
+                    <div className="review-content">
+                        {quizData.questions.map((q, qIdx) => {
+                            const userChoiceIdx = userAnswers[qIdx];
+                            const isCorrect = userChoiceIdx !== null && q.choices[userChoiceIdx]?.is_correct;
+
+                            return (
+                                <div key={qIdx} className={`review-item ${isCorrect ? 'correct' : 'wrong'}`}>
+                                    <div className="review-q-header">
+                                        <div className="q-info-group">
+                                            <span className="q-num">Question {qIdx + 1}</span>
+                                            <span className={`q-status ${isCorrect ? 'status-correct' : 'status-wrong'}`}>
+                                                {isCorrect ? 'Correct' : 'Incorrect'}
+                                            </span>
+                                        </div>
+                                        <button
+                                            className="btn-ai-explain"
+                                            onClick={() => {
+                                                const studentAnsText = userChoiceIdx !== null ? q.choices[userChoiceIdx]?.text : "No answer provided";
+                                                setExplanationData({ question: q, studentAnswer: studentAnsText });
+                                                setIsExplaining(true);
+                                            }}
+                                        >
+                                            <Bot size={14} />
+                                            <span>Wait, Why?</span>
+                                        </button>
+                                    </div>
+                                    <h3 className="review-q-text">{q.text}</h3>
+                                    <div className="review-choices">
+                                        {q.choices.map((choice, cIdx) => {
+                                            const isSelected = userChoiceIdx === cIdx;
+                                            const isProperCorrect = choice.is_correct;
+
+                                            let choiceClass = '';
+                                            if (isProperCorrect) choiceClass = 'correct-choice';
+                                            else if (isSelected && !isProperCorrect) choiceClass = 'wrong-choice';
+
+                                            return (
+                                                <div key={cIdx} className={`review-choice ${choiceClass}`}>
+                                                    <span className="choice-text">{choice.text}</span>
+                                                    {isProperCorrect && <i className="fas fa-check-circle"></i>}
+                                                    {isSelected && !isProperCorrect && <i className="fas fa-times-circle"></i>}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    <div className="review-footer">
+                        <button className="btn btn-primary" onClick={resetGame}>Play Again</button>
+                        <button className="btn btn-secondary" onClick={handleExit}>Finish Review</button>
+                    </div>
+                </div>
+            )}
+            {explanationData && (
+                <AIExplanationModal
+                    isOpen={isExplaining}
+                    onClose={() => setIsExplaining(false)}
+                    question={explanationData.question}
+                    studentAnswer={explanationData.studentAnswer}
+                />
+            )}
         </div>
     );
 }
-

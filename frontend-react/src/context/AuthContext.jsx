@@ -37,7 +37,10 @@ export const AuthProvider = ({ children }) => {
         const storedUser = localStorage.getItem('user');
         if (token && storedUser && storedUser !== 'undefined') {
             try {
-                setUser(JSON.parse(storedUser));
+                const parsedUser = JSON.parse(storedUser);
+                setUser(parsedUser);
+                // Sync user state from backend to check streak
+                syncUser(token);
             } catch (e) {
                 console.error("Failed to parse stored user", e);
                 localStorage.removeItem('user');
@@ -45,6 +48,39 @@ export const AuthProvider = ({ children }) => {
         }
         setLoading(false);
     }, [token]);
+
+    // Handle cross-tab login/logout sync - REMOVED per user request
+    // User wants independent tab sessions (at least visually) in this context
+    // useEffect(() => { ... window.addEventListener('storage', ...) ... }, []);
+
+    const syncUser = async (authToken) => {
+        try {
+            const res = await fetch('/api/v1/auth/me', {
+                headers: { 'Authorization': `Bearer ${authToken}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setUser(data);
+                localStorage.setItem('user', JSON.stringify(data));
+
+                // If streak was updated today, show a notification
+                // Note: We need a way to show notification here.
+                // Since NotificationContext is a sibling of AuthProvider in App.jsx,
+                // we might need to handle the notification differently or 
+                // move NotificationProvider inside AuthProvider.
+                if (data.streak_updated) {
+                    // Create a custom event to notify parent of streak
+                    window.dispatchEvent(new CustomEvent('streakUpdated', {
+                        detail: { count: data.streak_count }
+                    }));
+                }
+            } else if (res.status === 401) {
+                logout();
+            }
+        } catch (err) {
+            console.error("Failed to sync user", err);
+        }
+    };
 
     const login = (newToken, newUser) => {
         localStorage.setItem('token', newToken);
@@ -61,7 +97,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, login, logout, loading }}>
+        <AuthContext.Provider value={{ user, token, login, logout, loading, syncUser }}>
             {children}
         </AuthContext.Provider>
     );

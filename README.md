@@ -55,48 +55,69 @@ zedny-project/
 │   │   │       │   ├── auth.py          # Authentication
 │   │   │       │   ├── admin.py         # Super Admin Operations
 │   │   │       │   ├── quizzes.py       # Quiz Management
-│   │   │       │   └── generate.py      # AI Question Generation
+│   │   │       │   ├── courses.py       # LMS Course Management
+│   │   │       │   ├── generate.py      # AI Question Generation
+│   │   │       │   └── uploads.py       # File Upload Handler
 │   │   │       └── api.py               # Router aggregation
 │   │   │
 │   │   ├── 📁 core/                     # Core Configuration
 │   │   │   ├── config.py                # App Settings
-│   │   │   └── security.py              # JWT & Hashing
+│   │   │   ├── security.py              # JWT & Hashing
+│   │   │   └── super_admin.py           # Super Admin Utilities
 │   │   │
 │   │   ├── 📁 db/                       # Database
-│   │   │   └── session.py               # Session Management
+│   │   │   └── session.py               # Async Session Management
 │   │   │
 │   │   ├── 📁 models/                   # DB Models (SQLAlchemy)
 │   │   │   ├── user.py                  # User & Roles
-│   │   │   └── quiz.py                  # Quiz, Question, Choice
+│   │   │   ├── quiz.py                  # Quiz, Question, Choice, Attempts
+│   │   │   └── course.py                # Course, Lesson, Enrollment
 │   │   │
 │   │   ├── 📁 schemas/                  # Pydantic Schemas
 │   │   │   ├── user.py                  # User Validation
+│   │   │   ├── quiz.py                  # Quiz Schemas
+│   │   │   ├── course.py                # Course Schemas
 │   │   │   └── admin.py                 # Admin Dashboard Schemas
 │   │   │
 │   │   ├── 📁 services/                 # Business Logic
-│   │   │   ├── ai_service.py            # Gemini AI Integration
-│   │   │   └── pdf_service.py           # text extraction
+│   │   │   └── question_generator.py    # AI Question Generation
 │   │   │
 │   │   └── main.py                      # App Entry Point
 │   │
 │   ├── 📁 alembic/                      # Database Migrations
-│   ├── .env                             # Environment Variables (Private)
-│   ├── run.py                           # Server startup script
-│   └── manage_admin.py                  # Admin management utility
+│   ├── 📁 docs/                         # 📚 Documentation
+│   │   ├── DATABASE_ARCHITECTURE.md     # Database Schema
+│   │   ├── IMPROVEMENTS.md              # Performance Guide
+│   │   └── TEST_REPORT_AR.md            # Test Report (Arabic)
+│   │
+│   ├── 📁 scripts/                      # 🔧 Utility Scripts
+│   │   ├── apply_improvements.py        # Apply DB Optimizations
+│   │   ├── verify_improvements.py       # Verify Improvements
+│   │   └── manage_admin.py              # Admin Management
+│   │
+│   ├── 📁 uploads/                      # 📁 User Uploads
+│   ├── .env                             # Environment Variables
+│   ├── README.md                        # Backend Documentation
+│   ├── PROJECT_STRUCTURE.md             # Detailed Structure
+│   └── run.py                           # Server Startup
 │
 ├── 📁 frontend-react/                   # Frontend (React + Vite)
 │   ├── 📁 src/                          # Source Code
 │   │   ├── 📁 components/               # Reusable Components
-│   │   ├── 📁 context/                  # State Management (Auth, Notify)
+│   │   ├── 📁 context/                  # State Management
 │   │   ├── 📁 pages/                    # Application Views
 │   │   │   ├── SuperAdminDashboard.jsx  # Admin Command Center
 │   │   │   ├── TeacherDashboard.jsx     # Teacher Portal
-│   │   │   └── StudentDashboard.jsx     # Student Portal
+│   │   │   ├── StudentDashboard.jsx     # Student Portal
+│   │   │   ├── CreateQuiz.jsx           # Quiz Creation
+│   │   │   ├── HostGame.jsx             # Quiz Host View
+│   │   │   └── PlayerGame.jsx           # Student Quiz View
 │   │   │
 │   │   └── App.jsx                      # Main Router
 │   │
 │   └── vite.config.js                   # Vite Settings
 │
+├── README.md                            # 📖 Project Overview
 ├── requirements.txt                     # Python Dependencies
 └── Run_Project.bat                      # One-click startup script
 ```

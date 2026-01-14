@@ -28,14 +28,14 @@
  * =============================================================================
  */
 
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 
 const NotificationContext = createContext(null);
 
 export const NotificationProvider = ({ children }) => {
     const [notifications, setNotifications] = useState([]);
 
-    const showNotification = useCallback((message, type = 'info', title = '') => {
+    const showNotification = useCallback((message, type = 'info', title = '', isStreak = false) => {
         const id = Date.now();
         let displayTitle = title;
 
@@ -46,19 +46,34 @@ export const NotificationProvider = ({ children }) => {
             else displayTitle = 'Info';
         }
 
-        setNotifications(prev => [...prev, { id, message, type, title: displayTitle }]);
+        setNotifications(prev => [...prev, { id, message, type, title: displayTitle, isStreak }]);
 
         setTimeout(() => {
             setNotifications(prev => prev.filter(n => n.id !== id));
         }, 5000); // 5 seconds to match original
     }, []);
 
+    // Listen for global streak update events
+    useEffect(() => {
+        const handleStreak = (event) => {
+            const { count } = event.detail;
+            const message = count === 1
+                ? "Welcome back! Start your first day of learning! 🚀"
+                : `Awesome! You've entered for the ${count}${count === 2 ? 'nd' : count === 3 ? 'rd' : 'th'} day in a row! 🔥`;
+
+            showNotification(message, 'info', 'Daily Streak', true);
+        };
+
+        window.addEventListener('streakUpdated', handleStreak);
+        return () => window.removeEventListener('streakUpdated', handleStreak);
+    }, [showNotification]);
+
     return (
         <NotificationContext.Provider value={{ showNotification }}>
             {children}
             <div id="notification-container">
                 {notifications.map(n => (
-                    <div key={n.id} className={`notification-toast ${n.type}`}>
+                    <div key={n.id} className={`notification-toast ${n.type} ${n.isStreak ? 'streak-toast' : ''}`}>
                         <i className={`fas notification-icon ${n.type === 'success' ? 'fa-check-circle' :
                             n.type === 'error' ? 'fa-exclamation-circle' :
                                 n.type === 'warning' ? 'fa-exclamation-triangle' :

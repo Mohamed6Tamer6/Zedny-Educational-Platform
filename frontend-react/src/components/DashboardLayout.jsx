@@ -1,13 +1,13 @@
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, LayoutDashboard, BookOpen, User as UserIcon, Settings } from 'lucide-react';
+import { LogOut, LayoutDashboard, BookOpen, User as UserIcon, Settings, Sparkles } from 'lucide-react';
 import '../styles/Dashboard.css';
 
 /**
  * DashboardLayout - A wrapper component that provides consistent 
  * navigation and styling for all dashboard types.
  */
-export default function DashboardLayout({ children, activeTab }) {
+export default function DashboardLayout({ children, activeTab, fullWidth = false }) {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
@@ -24,10 +24,13 @@ export default function DashboardLayout({ children, activeTab }) {
 
     return (
         <div className="dashboard-container">
+            {/* Premium Background Aesthetic */}
+            <div className="bg-blob blob-1"></div>
+            <div className="bg-blob blob-2"></div>
             <div className="bg-gradient"></div>
 
             {/* Navbar */}
-            <nav className="navbar">
+            <nav className="navbar glassmorphism-nav">
                 <div className="nav-left-brand">
                     <Link to="/dashboard" className="logo">Zedny<span className="dot">.</span></Link>
                 </div>
@@ -56,25 +59,53 @@ export default function DashboardLayout({ children, activeTab }) {
                             >
                                 Create Quiz
                             </Link>
+                            <Link
+                                to="/teacher-courses"
+                                className={`nav-link ${location.pathname.startsWith('/teacher-courses') ? 'active' : ''}`}
+                            >
+                                My Courses
+                            </Link>
+                            <Link
+                                to="/teacher/ai-assistant"
+                                className={`nav-link ${location.pathname === '/teacher/ai-assistant' ? 'active' : ''}`}
+                                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                            >
+                                <Sparkles size={14} className="text-purple-400" />
+                                AI Assistant
+                            </Link>
                         </>
                     )}
 
                     {/* Student specific results */}
                     {isStudent && !isTeacher && (
-                        <Link
-                            to="/my-performance"
-                            className={`nav-link ${location.pathname === '/my-performance' ? 'active' : ''}`}
-                        >
-                            My Performance
-                        </Link>
+                        <>
+                            <Link
+                                to="/my-performance"
+                                className={`nav-link ${location.pathname === '/my-performance' ? 'active' : ''}`}
+                            >
+                                My Performance
+                            </Link>
+                            <Link
+                                to="/courses"
+                                className={`nav-link ${location.pathname.startsWith('/courses') ? 'active' : ''}`}
+                            >
+                                Browse Courses
+                            </Link>
+                        </>
                     )}
                 </div>
 
                 <div className="nav-right">
                     <div className="user-profile">
-                        <div className="user-avatar">
-                            {user?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
-                        </div>
+                        <Link to="/profile" className="user-avatar-link">
+                            <div className="user-avatar">
+                                {user?.avatar_url ? (
+                                    <img src={user.avatar_url} alt="Profile" className="user-avatar-image" />
+                                ) : (
+                                    user?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'
+                                )}
+                            </div>
+                        </Link>
                         <div className="user-info-h">
                             <span className="user-name-h">{user?.full_name || 'User'}</span>
                             <span className="user-role-tag">{user?.role?.toLowerCase()}</span>
@@ -87,26 +118,69 @@ export default function DashboardLayout({ children, activeTab }) {
             </nav>
 
             {/* Main Content Area */}
-            <main className="dashboard-main-content">
+            <main className={`dashboard-main-content ${fullWidth ? 'full-width' : ''}`}>
                 {children}
             </main>
 
             <style jsx>{`
                 .dashboard-container {
                     min-height: 100vh;
-                    background: #0a0a0f;
+                    background: #000000; /* Deepest black */
                     color: #fff;
                     display: flex;
                     flex-direction: column;
+                    position: relative;
+                    overflow-x: hidden;
+                }
+
+                /* Background Blobs for Premium Feel */
+                .bg-blob {
+                    position: fixed;
+                    border-radius: 50%;
+                    filter: blur(120px);
+                    z-index: 0;
+                    pointer-events: none;
+                }
+
+                .blob-1 {
+                    width: 600px;
+                    height: 600px;
+                    background: linear-gradient(135deg, #1e40af, #7c3aed);
+                    top: -200px;
+                    left: -200px;
+                    opacity: 0.15;
+                }
+
+                .blob-2 {
+                    width: 500px;
+                    height: 500px;
+                    background: linear-gradient(135deg, #be185d, #f472b6);
+                    bottom: -150px;
+                    right: -150px;
+                    opacity: 0.12;
+                }
+
+                .glassmorphism-nav {
+                    background: rgba(15, 15, 15, 0.7) !important;
+                    backdrop-filter: blur(20px) !important;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
                 }
 
                 .dashboard-main-content {
                     padding: 100px 40px 40px;
                     flex: 1;
-                    z-index: 1;
+                    z-index: 10;
                     max-width: 1400px;
                     width: 100%;
                     margin: 0 auto;
+                    position: relative;
+                    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+
+                .dashboard-main-content.full-width {
+                    max-width: 100%;
+                    padding: 100px 20px 20px;
+                    margin: 0;
                 }
 
                 .nav-left-brand {
@@ -156,6 +230,15 @@ export default function DashboardLayout({ children, activeTab }) {
                     border-right: 1px solid rgba(255, 255, 255, 0.1);
                 }
 
+                .user-avatar-link {
+                    text-decoration: none;
+                    transition: transform 0.2s;
+                }
+
+                .user-avatar-link:hover {
+                    transform: scale(1.1);
+                }
+
                 .user-avatar {
                     width: 36px;
                     height: 36px;
@@ -167,6 +250,13 @@ export default function DashboardLayout({ children, activeTab }) {
                     font-weight: 700;
                     color: #fff;
                     font-size: 0.9rem;
+                    overflow: hidden;
+                }
+
+                .user-avatar-image {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
                 }
 
                 .user-info-h {

@@ -31,6 +31,27 @@ from app.core.super_admin import is_super_admin
 settings = get_settings()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_PREFIX}/auth/login")
+oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_PREFIX}/auth/login", auto_error=False)
+
+
+async def get_current_user_optional(
+    token: Optional[str] = Depends(oauth2_scheme_optional),
+    db: AsyncSession = Depends(get_db)
+) -> Optional[User]:
+    """Optional dependency to get user if token is present."""
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            return None
+        token_data = TokenData(user_id=int(user_id))
+    except (JWTError, ValueError):
+        return None
+
+    result = await db.execute(select(User).where(User.id == token_data.user_id))
+    return result.scalar_one_or_none()
 
 
 async def get_current_user(

@@ -61,6 +61,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.middleware("http")
+async def add_no_cache_headers(request, call_next):
+    response = await call_next(request)
+    # Disable caching for everything to ensure latest frontend during testing/dev
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
 current_dir = pathlib.Path(__file__).parent.absolute()
@@ -73,6 +82,12 @@ react_assets_dir = react_dist_dir / "assets"
 
 if react_assets_dir.exists():
     app.mount("/assets", StaticFiles(directory=str(react_assets_dir)), name="assets")
+
+# Mount Uploads directory
+uploads_dir = backend_dir / "uploads"
+if not uploads_dir.exists():
+    uploads_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=str(uploads_dir)), name="uploads")
 
 
 @app.get("/", include_in_schema=False)

@@ -70,6 +70,7 @@ class QuizBase(BaseModel):
     title: str = Field(..., max_length=200)
     description: Optional[str] = None
     is_public: bool = False
+    source_text: Optional[str] = None # Content used to generate the quiz
 
 class QuizCreate(QuizBase):
     questions: List[QuestionCreate] = []
@@ -123,7 +124,9 @@ class QuizAttempt(QuizAttemptBase):
 # --- Statistics Schemas ---
 class TeacherStats(BaseModel):
     total_quizzes: int
+    total_courses: int = 0
     total_students: int
+    total_participations: int = 0
     avg_completion_rate: float # 0.0 to 100.0
     quizzes: List[dict] = [] # Optional extra info per quiz
 
@@ -133,3 +136,16 @@ class StudentStats(BaseModel):
     best_rank: Optional[str] = None
     performance_history: List[QuizAttempt] = []
 
+# --- Results ---
+class QuizResult(BaseModel):
+    id: int
+    user_id: int
+    user_name: Optional[str] = None
+    score: int
+    total_questions: int
+    correct_answers: int
+    rank: Optional[str] = None
+    completed_at: datetime
+
+    class Config:
+        from_attributes = True

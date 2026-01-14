@@ -23,6 +23,8 @@ class AdminStats(BaseModel):
     total_quizzes: int
     total_questions: int
     total_attempts: int
+    total_participations: int = 0
+    total_courses: int = 0
     system_uptime: str = "99.9%"
     system_status: str = "Healthy"
     latest_activity: Optional[str] = "System monitoring active"
@@ -42,6 +44,18 @@ class QuizOverview(BaseModel):
     access_code: str
     question_count: int
     attempt_count: int
+    participation_count: int = 0
+    created_at: str
+
+from app.models.course import CourseStatus
+
+class CourseOverview(BaseModel):
+    id: int
+    title: str
+    teacher_name: str
+    lesson_count: int
+    enrollment_count: int
+    status: CourseStatus
     created_at: str
 
 class UserUpdate(BaseModel):

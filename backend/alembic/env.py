@@ -18,6 +18,7 @@ from app.core.config import get_settings
 
 # Import all models here to ensure they are registered with Base.metadata
 from app.models import User, Quiz, Question, Choice, QuizAttempt  # noqa
+from app.models import Course, Lesson, Enrollment, LessonProgress  # noqa - LMS models
 
 settings = get_settings()
 

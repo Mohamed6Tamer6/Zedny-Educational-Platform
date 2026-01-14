@@ -1,102 +1,120 @@
 """
 =============================================================================
-AI Service Module (Google Gemini)
+AI Assistant Service
 =============================================================================
-This module provides AI-powered question generation using Google's Gemini API.
-
-Functions:
-- generate_quiz_questions(): Generate quiz questions from text content
-
-Features:
-- Uses Google Gemini Flash model for fast generation
-- Structured JSON output format
-- Configurable number of questions and difficulty
-- Automatic cleanup of markdown formatting from responses
-
-Prompt Engineering:
-- Expert quiz creator persona
-- Strict JSON array output format
-- Exactly one correct answer per question
-- 4 choices per question
-
-Dependencies:
-- Google Generative AI library
-- GEMINI_API_KEY environment variable
-
-Author: Zedny Development Team
-=============================================================================
+This module provides AI-powered chat and content generation services for teachers.
+Uses OpenAI's GPT models to provide educational assistance.
 """
-
-import google.generativeai as genai
-import json
+import os
+from typing import List, Dict, Optional
+from openai import OpenAI
 from app.core.config import get_settings
-from fastapi import HTTPException
-from typing import List, Dict, Any
+from app.services.question_generator import get_question_generator
 
 settings = get_settings()
 
-if settings.GEMINI_API_KEY:
-    genai.configure(api_key=settings.GEMINI_API_KEY)
-
-async def generate_quiz_questions(text: str, num_questions: int, difficulty: str) -> List[Dict[str, Any]]:
-    """
-    Generates quiz questions from the given text using Gemini AI.
+class AIService:
+    """Handles general AI chat interactions for educational assistance."""
     
-    Args:
-        text (str): The source text.
-        num_questions (int): Number of questions to generate.
-        difficulty (str): Difficulty level (Beginner, Medium, Advanced).
+    def __init__(self, api_key: Optional[str] = None):
+        import os
+        self.api_key = api_key or settings.OPENAI_API_KEY or os.environ.get("OPENAI_API_KEY")
         
-    Returns:
-        List[Dict[str, Any]]: A list of generated questions.
-    """
-    if not settings.GEMINI_API_KEY:
-         raise HTTPException(status_code=500, detail="Gemini API Key is not configured.")
-
-    model = genai.GenerativeModel('gemini-flash-latest')
-    
-    prompt = f"""
-    You are an expert quiz creator. Generate {num_questions} multiple-choice quiz questions based on the provided text.
-    The difficulty level should be: {difficulty}.
-    
-    Current Text Context:
-    {text[:100000]} 
-    
-    (Note: Text is truncated to fit context window if too long).
-    
-    Output the result STRICTLY as a valid JSON array of objects. Do not include markdown formatting (like ```json).
-    Each object should represent a question and have the following structure:
-    {{
-        "text": "Question text here",
-        "question_type": "multiple_choice",
-        "points": 10,
-        "time_limit": 30,
-        "choices": [
-            {{ "text": "Choice 1", "is_correct": false }},
-            {{ "text": "Choice 2", "is_correct": true }},
-            {{ "text": "Choice 3", "is_correct": false }},
-            {{ "text": "Choice 4", "is_correct": false }}
-        ]
-    }}
-    
-    Ensure exactly one choice is correct per question.
-    """
-    
-    try:
-        response = model.generate_content(prompt)
-        response_text = response.text.strip()
+        if not self.api_key:
+            raise ValueError("OpenAI API Key is missing.")
         
-        # Clean up if the model adds markdown code blocks despite instructions
-        if response_text.startswith("```json"):
-            response_text = response_text[7:]
-        if response_text.startswith("```"):
-            response_text = response_text[3:]
-        if response_text.endswith("```"):
-            response_text = response_text[:-3]
+        self.client = OpenAI(api_key=self.api_key)
+
+    def get_chat_response(self, message: str, history: List[Dict[str, str]], system_context: Optional[str] = None) -> str:
+        """
+        Sends a message to the AI and gets a response, considering the chat history.
+        Can be grounded with a custom system_context (e.g., lesson content).
+        """
+        default_system_prompt = (
+            "You are an expert educational content assistant for the Zedny platform. "
+            "Your goal is to help users (teachers or students) with educational content. "
+            "Be professional, encouraging, and clear. Format your responses using Markdown for readability. "
+            "You support both English and Arabic."
+        )
+        
+        system_prompt = system_context if system_context else default_system_prompt
+
+        messages = [{"role": "system", "content": system_prompt}]
+        
+        # Add relevant history (last 5 messages to save tokens and maintain context)
+        for h in history[-5:]:
+            messages.append({"role": h["role"], "content": h["content"]})
             
-        questions = json.loads(response_text)
-        return questions
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=500, detail="Failed to parse AI response. Try again.")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AI Generation failed: {str(e)}")
+        # Add current message
+        messages.append({"role": "user", "content": message})
+
+        try:
+            print(f"DEBUG: AI Assistant - Processing message: {message[:50]}...")
+            response = self.client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=messages,
+                temperature=0.7,
+                max_tokens=1500,
+                timeout=30.0 # Add timeout to prevent hanging
+            )
+            reply = response.choices[0].message.content.strip()
+            print("DEBUG: AI Assistant - Response received successfully.")
+            return reply
+        except Exception as e:
+            print(f"ERROR: AI Assistant Service Error: {e}")
+            raise Exception(f"AI Service Error: {str(e)}")
+
+    def explain_quiz_mistake(self, question: str, choices: List[str], correct_answer: str, student_answer: str, lesson_context: Optional[str] = None) -> str:
+        """
+        Generates a pedagogical explanation for a student's mistake in a quiz.
+        """
+        prompt = (
+            f"Question: {question}\n"
+            f"Options: {', '.join(choices)}\n"
+            f"Correct Answer: {correct_answer}\n"
+            f"Student's Answer: {student_answer}\n\n"
+        )
+        
+        if lesson_context:
+            prompt += f"Reference Material (PDF/Lesson Content):\n{lesson_context}\n\n"
+            
+        prompt += (
+            "Instruction: Explain to the student in a supportive, teacher-like tone why their answer was incorrect "
+            "and why the correct answer is right. Focus on the underlying concept and use the Reference Material provided to ground your explanation. "
+            "If the Student's Answer is actually the same as the Correct Answer (even if the system marked it wrong), clarify this and affirm the student. "
+            "The explanation should be in the same language as the question (Arabic or English)."
+        )
+
+        system_prompt = "You are an empathetic, expert tutor on the Zedny Educational Platform."
+
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7,
+                max_tokens=800,
+                timeout=30.0
+            )
+            return response.choices[0].message.content.strip()
+        except Exception as e:
+            print(f"ERROR: AI Mistake Explanation Error: {e}")
+            raise Exception(f"Explanation Service Error: {str(e)}")
+
+_ai_service_instance = None
+
+def get_ai_service(api_key: Optional[str] = None) -> AIService:
+    global _ai_service_instance
+    if _ai_service_instance is None or api_key:
+        _ai_service_instance = AIService(api_key)
+    return _ai_service_instance
+
+async def generate_quiz_questions(content: str, num_questions: int = 5, difficulty: str = "medium") -> List[Dict]:
+    """
+    Wrapper function to maintain backward compatibility with quizzes.py.
+    Uses the QuestionGenerator service.
+    """
+    generator = get_question_generator()
+    return generator.generate_questions(content, num_questions, difficulty)

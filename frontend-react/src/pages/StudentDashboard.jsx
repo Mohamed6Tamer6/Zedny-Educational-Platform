@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
-import { Play, TrendingUp, Clock, Trophy, ArrowRight } from 'lucide-react';
+import { Play, TrendingUp, Clock, Trophy, ArrowRight, BookOpen, Star, Sparkles, Flame } from 'lucide-react';
 import { useNotification } from '../context/NotificationContext';
 
 const API_URL = '/api/v1';
@@ -38,7 +38,6 @@ export default function StudentDashboard() {
                 const data = await res.json();
                 setStats(data);
             } else if (res.status === 401) {
-                // Silently wait for re-auth or handled by PrivateRoute
                 console.warn("Unauthorized stats fetch");
             } else {
                 showNotification('Could not load your latest statistics', 'error');
@@ -65,7 +64,6 @@ export default function StudentDashboard() {
             if (res.ok) {
                 const quiz = await res.json();
                 showNotification(`Joining ${quiz.title}...`, 'success');
-                // Navigate to play page with the pre-validated code
                 setTimeout(() => {
                     navigate(`/play?code=${quizCode}`);
                 }, 1000);
@@ -82,121 +80,148 @@ export default function StudentDashboard() {
     return (
         <DashboardLayout>
             <div className="student-dashboard">
-                <header className="dashboard-header">
-                    <div className="header-info">
-                        <h1>Welcome back, <span className="highlight">{user?.full_name?.split(' ')[0] || 'Student'}</span>!</h1>
-                        <p>Ready to test your knowledge today?</p>
+                {/* Hero Welcome Section */}
+                <header className="hero-section">
+                    <div className="hero-content">
+                        <div className="welcome-badge">
+                            <Sparkles size={14} className="text-blue-400" />
+                            <span>Level Up Your Learning</span>
+                        </div>
+                        <h1>
+                            Welcome back, <span className="premium-text">{user?.full_name?.split(' ')[0] || 'Explorer'}</span>
+                            {user?.streak_count > 0 && <span className="streak-fire"> 🔥</span>}!
+                        </h1>
+                        <p>Your journey to excellence continues today. You've been active for <b>{user?.streak_count || 0}</b> days in a row!</p>
                     </div>
-                    <button
-                        className="btn-refresh glassmorphism"
-                        onClick={fetchStudentStats}
-                        disabled={loading}
-                    >
-                        <Clock size={16} className={loading ? 'animate-spin' : ''} />
-                        <span>{loading ? 'Refreshing...' : 'Refresh Stats'}</span>
-                    </button>
+                    <div className="hero-actions">
+                        <button
+                            className="btn-refresh-premium"
+                            onClick={fetchStudentStats}
+                            disabled={loading}
+                        >
+                            <Clock size={16} className={loading ? 'animate-spin' : ''} />
+                            <span>{loading ? 'Updating...' : 'Refresh Stats'}</span>
+                        </button>
+                    </div>
                 </header>
 
-                <div className="dashboard-grid">
-                    {/* Join Quiz Section */}
-                    <div className="dashboard-card join-card glassmorphism">
-                        <div className="card-header">
-                            <div className="icon-wrapper blue">
-                                <Play size={20} fill="currentColor" />
-                            </div>
-                            <h3>Join a Quiz</h3>
+                <div className="dashboard-main-grid">
+                    {/* Join Quiz Card - Premium Interaction */}
+                    <div className="premium-card join-box">
+                        <div className="card-visual">
+                            <div className="circle-glow"></div>
+                            <Play size={32} fill="currentColor" className="play-icon" />
                         </div>
-                        <p className="card-desc">Enter the access code provided by your teacher to start a live session.</p>
+                        <div className="card-body">
+                            <h3>Live Session</h3>
+                            <p>Enter the 6-digit code from your teacher to join a live quiz room.</p>
 
-                        <form className="join-form" onSubmit={handleJoinQuiz}>
-                            <div className="code-input-wrapper">
-                                <input
-                                    type="text"
-                                    placeholder="Enter Code (e.g. AB1234)"
-                                    value={quizCode}
-                                    onChange={(e) => setQuizCode(e.target.value.toUpperCase())}
-                                    maxLength={6}
-                                />
-                                <button type="submit" disabled={isJoining}>
-                                    {isJoining ? '...' : <ArrowRight size={20} />}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-
-                    {/* Stats Summary */}
-                    <div className="stats-row">
-                        <div className="stat-pill glassmorphism">
-                            <Clock size={16} />
-                            <span><strong>{stats.quizzes_taken}</strong> Quizzes Taken</span>
-                        </div>
-                        <div className="stat-pill glassmorphism">
-                            <TrendingUp size={16} />
-                            <span><strong>{stats.avg_score}%</strong> Avg Score</span>
-                        </div>
-                        <div className="stat-pill glassmorphism">
-                            <Trophy size={16} />
-                            <span><strong>{stats.best_rank}</strong> Best Rank</span>
+                            <form className="join-form-premium" onSubmit={handleJoinQuiz}>
+                                <div className="premium-input-wrapper">
+                                    <input
+                                        type="text"
+                                        placeholder="CODE: AB1234"
+                                        value={quizCode}
+                                        onChange={(e) => setQuizCode(e.target.value.toUpperCase())}
+                                        maxLength={6}
+                                    />
+                                    <button type="submit" disabled={isJoining} className="btn-join-action">
+                                        {isJoining ? <div className="spinner-mini"></div> : 'Join Room'}
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
 
-                    {/* Results Dashboard Section */}
-                    <div className="dashboard-card results-card glassmorphism full-width">
-                        <div className="card-header">
-                            <div className="icon-wrapper purple">
-                                <TrendingUp size={20} />
+                    {/* Quick Stats Grid */}
+                    <div className="stats-subgrid">
+                        <div className="stat-box-premium">
+                            <div className="stat-icon-wrap blue"><BookOpen size={20} /></div>
+                            <div className="stat-content">
+                                <span className="val">{stats.quizzes_taken}</span>
+                                <span className="lbl">Quizzes Taken</span>
                             </div>
-                            <h3>Performance History</h3>
+                        </div>
+                        <div className="stat-box-premium">
+                            <div className="stat-icon-wrap purple"><TrendingUp size={20} /></div>
+                            <div className="stat-content">
+                                <span className="val">{stats.avg_score}%</span>
+                                <span className="lbl">Average Score</span>
+                            </div>
+                        </div>
+                        <div className="stat-box-premium streak-box">
+                            <div className="stat-icon-wrap orange"><Flame size={20} /></div>
+                            <div className="stat-content">
+                                <span className="val streak-val">{user?.streak_count || 0}</span>
+                                <span className="lbl">Day Streak</span>
+                            </div>
+                            {user?.streak_count > 0 && <div className="streak-glow-bg"></div>}
+                        </div>
+                    </div>
+
+                    {/* Activity & Performance History */}
+                    <div className="premium-card performance-card full-width">
+                        <div className="card-header-premium">
+                            <div className="header-label">
+                                <TrendingUp size={18} />
+                                <h3>Performance Insights</h3>
+                            </div>
+                            <Link to="/my-performance" className="view-link">
+                                Detailed Analytics <ArrowRight size={14} />
+                            </Link>
                         </div>
 
-                        <div className="results-content">
-                            <div className="plot-container">
-                                {/* Simple CSS-based Chart */}
-                                <div className="chart-y-axis">
+                        <div className="performance-content">
+                            <div className="chart-visual">
+                                <div className="y-axis">
                                     <span>100%</span>
                                     <span>50%</span>
                                     <span>0%</span>
                                 </div>
-                                <div className="chart-bars">
+                                <div className="bars-container">
                                     {stats.performance_history.length > 0 ? (
-                                        stats.performance_history.slice(0, 5).reverse().map(res => (
-                                            <div key={res.id} className="chart-bar-item">
-                                                <div className="bar-wrapper">
+                                        stats.performance_history.slice(0, 6).reverse().map((res, idx) => (
+                                            <div key={res.id} className="premium-bar-item">
+                                                <div className="bar-column">
                                                     <div
-                                                        className="bar-fill"
-                                                        style={{ height: `${(res.correct_answers / res.total_questions) * 100}%` }}
+                                                        className="bar-progress"
+                                                        style={{
+                                                            height: `${(res.correct_answers / res.total_questions) * 100}%`,
+                                                            animationDelay: `${idx * 0.1}s`
+                                                        }}
                                                     >
-                                                        <span className="bar-tooltip">{Math.round((res.correct_answers / res.total_questions) * 100)}%</span>
+                                                        <div className="bar-glow"></div>
+                                                        <span className="tooltip">{Math.round((res.correct_answers / res.total_questions) * 100)}%</span>
                                                     </div>
                                                 </div>
-                                                <span className="bar-label">{res.quiz_title}</span>
+                                                <span className="label">{res.quiz_title}</span>
                                             </div>
                                         ))
                                     ) : (
-                                        <p style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', opacity: 0.3 }}>No history yet</p>
+                                        <div className="empty-chart">
+                                            <TrendingUp size={48} />
+                                            <p>Complete quizzes to see your growth</p>
+                                        </div>
                                     )}
                                 </div>
                             </div>
 
-                            <div className="recent-list">
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
-                                    <h4 style={{ margin: 0 }}>Recent Sessions</h4>
-                                    <Link to="/my-performance" style={{ fontSize: '0.8rem', color: '#6366f1' }}>View All</Link>
-                                </div>
+                            <div className="history-list">
+                                <h4>Recent Activity</h4>
                                 {stats.performance_history.length > 0 ? (
-                                    stats.performance_history.slice(0, 3).map(res => (
-                                        <div key={res.id} className="result-item">
-                                            <div className="result-info">
-                                                <span className="res-title">{res.quiz_title}</span>
-                                                <span className="res-date">{new Date(res.completed_at).toLocaleDateString()}</span>
+                                    stats.performance_history.slice(0, 4).map(res => (
+                                        <div key={res.id} className="history-item-premium">
+                                            <div className="h-info">
+                                                <span className="h-title">{res.quiz_title}</span>
+                                                <span className="h-date">{new Date(res.completed_at).toLocaleDateString()}</span>
                                             </div>
-                                            <div className={`res-score ${res.correct_answers / res.total_questions >= 0.8 ? 'high' : res.correct_answers / res.total_questions >= 0.6 ? 'mid' : 'low'}`}>
+                                            <div className={`h-score ${res.correct_answers / res.total_questions >= 0.8 ? 'gold' : res.correct_answers / res.total_questions >= 0.6 ? 'silver' : 'bronze'}`}>
                                                 {Math.round((res.correct_answers / res.total_questions) * 100)}%
                                             </div>
                                         </div>
                                     ))
                                 ) : (
-                                    <p style={{ opacity: 0.4, textAlign: 'center', padding: '20px 0' }}>No quizzes completed yet.</p>
+                                    <div className="empty-list">No recent activity</div>
                                 )}
                             </div>
                         </div>
@@ -204,307 +229,466 @@ export default function StudentDashboard() {
                 </div>
             </div>
 
-
             <style jsx>{`
                 .student-dashboard {
                     display: flex;
                     flex-direction: column;
-                    gap: 30px;
-                    animation: fadeIn 0.5s ease-out;
+                    gap: 32px;
+                    animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
                 }
 
-                @keyframes fadeIn {
-                    from { opacity: 0; transform: translateY(10px); }
+                @keyframes slideUp {
+                    from { opacity: 0; transform: translateY(20px); }
                     to { opacity: 1; transform: translateY(0); }
                 }
 
-                .dashboard-header h1 {
-                    font-size: 2.2rem;
-                    margin-bottom: 5px;
-                }
-
-                .highlight {
-                    background: linear-gradient(135deg, #6366f1, #a855f7);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                }
-
-                .dashboard-header p {
-                    color: rgba(255, 255, 255, 0.5);
-                }
-
-                .btn-refresh {
+                /* Hero Section */
+                .hero-section {
                     display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 20px 0;
+                }
+
+                .welcome-badge {
+                    display: inline-flex;
                     align-items: center;
                     gap: 8px;
-                    padding: 10px 18px;
-                    border-radius: 12px;
+                    padding: 6px 12px;
+                    background: rgba(99, 102, 241, 0.1);
+                    border: 1px solid rgba(99, 102, 241, 0.2);
+                    border-radius: 100px;
+                    color: #818cf8;
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    margin-bottom: 16px;
+                }
+
+                .hero-content h1 {
+                    font-size: 2.8rem;
+                    font-weight: 800;
+                    margin-bottom: 12px;
+                    letter-spacing: -1px;
+                }
+
+                .premium-text {
+                    background: linear-gradient(135deg, #60a5fa, #c084fc);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    text-shadow: 0 0 30px rgba(99, 102, 241, 0.3);
+                }
+
+                .hero-content p {
+                    font-size: 1.1rem;
+                    color: rgba(255, 255, 255, 0.5);
+                    max-width: 600px;
+                }
+
+                .btn-refresh-premium {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    padding: 12px 20px;
+                    background: rgba(255, 255, 255, 0.05);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    border-radius: 14px;
                     color: #fff;
                     font-size: 0.9rem;
                     font-weight: 500;
                     cursor: pointer;
-                    transition: 0.3s;
+                    transition: all 0.3s;
                 }
 
-                .btn-refresh:hover {
-                    background: rgba(255, 255, 255, 0.08);
+                .btn-refresh-premium:hover {
+                    background: rgba(255, 255, 255, 0.1);
+                    border-color: rgba(255, 255, 255, 0.2);
                     transform: translateY(-2px);
                 }
 
-                .animate-spin {
-                    animation: spin 1s linear infinite;
-                }
-
-                @keyframes spin {
-                    from { transform: rotate(0deg); }
-                    to { transform: rotate(360deg); }
-                }
-
-                .dashboard-grid {
+                /* Layout Grid */
+                .dashboard-main-grid {
                     display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    gap: 20px;
+                    grid-template-columns: 1.2fr 0.8fr;
+                    gap: 24px;
                 }
 
-                .dashboard-card {
-                    padding: 30px;
-                    border-radius: 24px;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 15px;
+                .premium-card {
+                    background: rgba(15, 15, 15, 0.6);
+                    backdrop-filter: blur(20px);
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    border-radius: 28px;
+                    padding: 32px;
+                    position: relative;
+                    overflow: hidden;
+                    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                }
+
+                .premium-card:hover {
+                    border-color: rgba(255, 255, 255, 0.15);
+                    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
                 }
 
                 .full-width {
                     grid-column: span 2;
                 }
 
-                .glassmorphism {
-                    background: rgba(255, 255, 255, 0.03);
-                    backdrop-filter: blur(10px);
-                    border: 1px solid rgba(255, 255, 255, 0.08);
-                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-                }
-
-                .card-header {
+                /* Join Card Specific */
+                .join-box {
                     display: flex;
                     align-items: center;
-                    gap: 15px;
+                    gap: 32px;
                 }
 
-                .icon-wrapper {
-                    width: 42px;
-                    height: 42px;
-                    border-radius: 12px;
+                .card-visual {
+                    position: relative;
+                    width: 100px;
+                    height: 100px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
+                    background: rgba(59, 130, 246, 0.1);
+                    border-radius: 24px;
+                    color: #3b82f6;
                 }
 
-                .icon-wrapper.blue { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
-                .icon-wrapper.purple { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
-
-                .card-desc {
-                    color: rgba(255, 255, 255, 0.5);
-                    font-size: 0.9rem;
-                    line-height: 1.5;
+                .circle-glow {
+                    position: absolute;
+                    width: 140%;
+                    height: 140%;
+                    background: radial-gradient(circle, rgba(59, 130, 246, 0.2) 0%, transparent 70%);
+                    z-index: -1;
+                    animation: pulseGlow 3s infinite;
                 }
 
-                .join-form {
-                    margin-top: 10px;
+                @keyframes pulseGlow {
+                    0%, 100% { transform: scale(1); opacity: 0.5; }
+                    50% { transform: scale(1.1); opacity: 0.8; }
                 }
 
-                .code-input-wrapper {
+                .card-body {
+                    flex: 1;
+                }
+
+                .card-body h3 {
+                    font-size: 1.5rem;
+                    margin-bottom: 8px;
+                }
+
+                .card-body p {
+                    color: rgba(255, 255, 255, 0.4);
+                    font-size: 0.95rem;
+                    margin-bottom: 24px;
+                }
+
+                .join-form-premium {
+                    max-width: 400px;
+                }
+
+                .premium-input-wrapper {
                     display: flex;
-                    gap: 10px;
                     background: rgba(255, 255, 255, 0.05);
                     border: 1px solid rgba(255, 255, 255, 0.1);
-                    border-radius: 12px;
-                    padding: 8px;
-                    transition: 0.3s;
+                    border-radius: 16px;
+                    padding: 6px;
+                    transition: all 0.3s;
                 }
 
-                .code-input-wrapper:focus-within {
-                    border-color: #6366f1;
+                .premium-input-wrapper:focus-within {
+                    border-color: #3b82f6;
                     background: rgba(255, 255, 255, 0.08);
+                    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
                 }
 
-                .code-input-wrapper input {
+                .premium-input-wrapper input {
+                    flex: 1;
                     background: transparent;
                     border: none;
                     color: #fff;
-                    padding: 10px 15px;
-                    flex: 1;
-                    font-size: 1.1rem;
-                    font-weight: 600;
+                    padding: 0 16px;
+                    font-size: 1rem;
+                    font-weight: 700;
                     letter-spacing: 2px;
                     outline: none;
                 }
 
-                .code-input-wrapper button {
-                    background: #6366f1;
+                .btn-join-action {
+                    background: #3b82f6;
                     color: #fff;
                     border: none;
-                    width: 44px;
-                    height: 44px;
-                    border-radius: 10px;
+                    padding: 12px 24px;
+                    border-radius: 12px;
+                    font-weight: 700;
                     cursor: pointer;
+                    transition: all 0.3s;
+                }
+
+                .btn-join-action:hover {
+                    background: #2563eb;
+                    transform: scale(1.02);
+                }
+
+                /* Stats Subgrid */
+                .stats-subgrid {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 16px;
+                }
+
+                .stat-box-premium {
+                    background: rgba(255, 255, 255, 0.03);
+                    border: 1px solid rgba(255, 255, 255, 0.05);
+                    border-radius: 20px;
+                    padding: 20px 24px;
+                    display: flex;
+                    align-items: center;
+                    gap: 16px;
+                    transition: all 0.3s;
+                }
+
+                .stat-box-premium:hover {
+                    background: rgba(255, 255, 255, 0.06);
+                    transform: translateX(8px);
+                }
+
+                .stat-icon-wrap {
+                    width: 48px;
+                    height: 48px;
+                    border-radius: 14px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    transition: 0.2s;
                 }
 
-                .code-input-wrapper button:hover {
-                    background: #4f46e5;
-                    transform: scale(1.05);
+                .stat-icon-wrap.blue { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+                .stat-icon-wrap.purple { background: rgba(168, 85, 247, 0.1); color: #a855f7; }
+                .stat-icon-wrap.gold { background: rgba(251, 191, 36, 0.1); color: #fbbf24; }
+                .stat-icon-wrap.orange { background: rgba(249, 115, 22, 0.1); color: #f97316; }
+
+                .stat-content .val {
+                    display: block;
+                    font-size: 1.4rem;
+                    font-weight: 800;
                 }
 
-                .stats-row {
+                .stat-content .lbl {
+                    font-size: 0.8rem;
+                    color: rgba(255, 255, 255, 0.4);
+                }
+
+                /* Performance Card */
+                .card-header-premium {
                     display: flex;
-                    flex-direction: column;
-                    gap: 12px;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 32px;
                 }
 
-                .stat-pill {
-                    padding: 18px 25px;
-                    border-radius: 20px;
+                .header-label {
                     display: flex;
                     align-items: center;
                     gap: 12px;
-                    font-size: 0.95rem;
+                    color: #a855f7;
                 }
 
-                .stat-pill svg { color: #a855f7; }
-
-                .results-content {
-                    display: grid;
-                    grid-template-columns: 1.5fr 1fr;
-                    gap: 40px;
-                    margin-top: 10px;
+                .header-label h3 {
+                    color: #fff;
+                    font-size: 1.25rem;
                 }
 
-                .plot-container {
-                    padding: 20px;
-                    background: rgba(0, 0, 0, 0.2);
-                    border-radius: 20px;
-                    height: 250px;
+                .view-link {
                     display: flex;
-                    gap: 20px;
-                    align-items: flex-end;
+                    align-items: center;
+                    gap: 6px;
+                    color: rgba(255, 255, 255, 0.4);
+                    font-size: 0.85rem;
+                    text-decoration: none;
+                    transition: color 0.3s;
+                }
+
+                .view-link:hover { color: #fff; }
+
+                .performance-content {
+                    display: grid;
+                    grid-template-columns: 1.4fr 0.6fr;
+                    gap: 48px;
+                }
+
+                /* Chart Visual */
+                .chart-visual {
+                    background: rgba(0, 0, 0, 0.2);
+                    border-radius: 24px;
+                    padding: 32px;
+                    height: 300px;
+                    display: flex;
+                    gap: 24px;
                     position: relative;
                 }
 
-                .chart-y-axis {
+                .chart-visual .y-axis {
                     display: flex;
                     flex-direction: column;
                     justify-content: space-between;
-                    height: 100%;
-                    color: rgba(255, 255, 255, 0.3);
+                    height: calc(100% - 40px);
+                    color: rgba(255, 255, 255, 0.2);
                     font-size: 0.75rem;
-                    padding-bottom: 30px;
+                    font-weight: 600;
                 }
 
-                .chart-bars {
+                .bars-container {
                     flex: 1;
                     display: flex;
                     justify-content: space-around;
                     align-items: flex-end;
                     height: 100%;
-                    padding-bottom: 30px;
                 }
 
-                .chart-bar-item {
+                .premium-bar-item {
                     display: flex;
                     flex-direction: column;
                     align-items: center;
-                    width: 40px;
-                    gap: 10px;
+                    gap: 12px;
+                    width: 48px;
                 }
 
-                .bar-wrapper {
-                    width: 12px;
-                    height: 180px;
-                    background: rgba(255, 255, 255, 0.05);
-                    border-radius: 10px;
+                .bar-column {
+                    width: 16px;
+                    height: 200px;
+                    background: rgba(255, 255, 255, 0.03);
+                    border-radius: 100px;
                     position: relative;
                     display: flex;
                     align-items: flex-end;
                 }
 
-                .bar-fill {
+                .bar-progress {
                     width: 100%;
                     background: linear-gradient(to top, #6366f1, #a855f7);
-                    border-radius: 10px;
+                    border-radius: 100px;
                     position: relative;
-                    transition: height 1s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+                    animation: growUp 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+                    transform-origin: bottom;
                 }
 
-                .bar-tooltip {
+                .bar-glow {
                     position: absolute;
-                    top: -25px;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    height: 20px;
+                    background: #a855f7;
+                    filter: blur(10px);
+                    opacity: 0.4;
+                }
+
+                @keyframes growUp { from { scale: 1 0; } to { scale: 1 1; } }
+
+                .tooltip {
+                    position: absolute;
+                    top: -40px;
                     left: 50%;
                     transform: translateX(-50%);
-                    font-size: 0.7rem;
                     background: #fff;
                     color: #000;
-                    padding: 2px 6px;
-                    border-radius: 4px;
-                    font-weight: 700;
+                    padding: 4px 8px;
+                    border-radius: 6px;
+                    font-size: 0.75rem;
+                    font-weight: 800;
                     opacity: 0;
-                    transition: 0.2s;
+                    transition: all 0.3s;
                 }
 
-                .chart-bar-item:hover .bar-tooltip { opacity: 1; top: -30px; }
+                .premium-bar-item:hover .tooltip { opacity: 1; top: -45px; }
 
-                .bar-label {
+                .premium-bar-item .label {
                     font-size: 0.7rem;
-                    color: rgba(255, 255, 255, 0.4);
+                    color: rgba(255, 255, 255, 0.3);
                     white-space: nowrap;
-                    transform: rotate(-15deg);
-                    margin-top: 8px;
+                    max-width: 60px;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
                 }
 
-                .recent-list h4 {
+                /* History List */
+                .history-list h4 {
                     font-size: 0.9rem;
-                    margin-bottom: 15px;
-                    color: rgba(255, 255, 255, 0.8);
+                    color: rgba(255, 255, 255, 0.5);
+                    margin-bottom: 20px;
                 }
 
-                .result-item {
+                .history-item-premium {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    padding: 12px 15px;
+                    padding: 16px;
                     background: rgba(255, 255, 255, 0.02);
-                    border-radius: 12px;
-                    margin-bottom: 8px;
-                    border: 1px solid rgba(255, 255, 255, 0.03);
+                    border: 1px solid rgba(255, 255, 255, 0.05);
+                    border-radius: 16px;
+                    margin-bottom: 12px;
+                    transition: 0.3s;
                 }
 
-                .result-info {
-                    display: flex;
-                    flex-direction: column;
+                .history-item-premium:hover {
+                    background: rgba(255, 255, 255, 0.05);
+                    border-color: rgba(255, 255, 255, 0.1);
                 }
 
-                .res-title { font-size: 0.9rem; font-weight: 500; }
-                .res-date { font-size: 0.75rem; color: rgba(255, 255, 255, 0.4); }
+                .h-info { display: flex; flex-direction: column; }
+                .h-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; }
+                .h-date { font-size: 0.75rem; color: rgba(255, 255, 255, 0.3); }
 
-                .res-score {
-                    font-weight: 700;
-                    padding: 4px 10px;
-                    border-radius: 8px;
-                    font-size: 0.85rem;
+                .h-score {
+                    font-weight: 800;
+                    padding: 6px 12px;
+                    border-radius: 10px;
                 }
 
-                .res-score.high { background: rgba(34, 197, 94, 0.1); color: #22c55e; }
-                .res-score.mid { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
-                .res-score.low { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+                .h-score.gold { background: rgba(251, 191, 36, 0.1); color: #fbbf24; }
+                .h-score.silver { background: rgba(148, 163, 184, 0.1); color: #94a3b8; }
+                .h-score.bronze { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
 
-                @media (max-width: 900px) {
-                    .dashboard-grid { grid-template-columns: 1fr; }
+                @media (max-width: 1024px) {
+                    .dashboard-main-grid { grid-template-columns: 1fr; }
                     .full-width { grid-column: span 1; }
-                    .results-content { grid-template-columns: 1fr; }
+                    .performance-content { grid-template-columns: 1fr; }
+                    .join-box { flex-direction: column; text-align: center; }
+                    .hero-section { flex-direction: column; gap: 24px; align-items: flex-start; }
                 }
+
+                .streak-box {
+                    position: relative;
+                    overflow: hidden;
+                    border: 1px solid rgba(249, 115, 22, 0.2);
+                }
+
+                .streak-val {
+                    color: #f97316;
+                    text-shadow: 0 0 10px rgba(249, 115, 22, 0.4);
+                }
+
+                .streak-glow-bg {
+                    position: absolute;
+                    top: -50%;
+                    right: -20%;
+                    width: 100px;
+                    height: 200px;
+                    background: radial-gradient(circle, rgba(249, 115, 22, 0.1) 0%, transparent 70%);
+                    z-index: 0;
+                    pointer-events: none;
+                }
+
+                .streak-fire {
+                    display: inline-block;
+                    animation: flicker 1s infinite alternate;
+                }
+
+                @keyframes flicker {
+                    from { transform: scale(1); filter: brightness(1); }
+                    to { transform: scale(1.1); filter: brightness(1.2); }
+                }
+
+                @keyframes spin { to { transform: rotate(360deg); } }
             `}</style>
         </DashboardLayout>
     );
